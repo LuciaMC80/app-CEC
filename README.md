@@ -2,7 +2,8 @@
 
 Herramienta web de apoyo a la decisión clínica para estadificar el carcinoma
 epidermoide cutáneo (CEC) invasivo y obtener las recomendaciones de manejo de las
-guías **EADO 2023** (partes 1 y 2) y **AIOM 2024**. Cada recomendación indica la
+guías **EADO 2023** (partes 1 y 2), **AIOM 2024** y la revisión española de
+**Actas Dermo‑Sifiliográficas 2026**, con la evidencia posterior más relevante. Cada recomendación indica la
 guía de la que procede y su grado.
 
 **Abrir la aplicación:** https://luciamc80.github.io/app-CEC/
@@ -15,14 +16,14 @@ estado ganglionar y metástasis) la aplicación devuelve:
 
 - **TNM y estadio**: AJCC 8.ª edición para cabeza y cuello y UICC 8.ª edición para
   tronco y extremidades.
-- **Estadio BWH** (Brigham and Women's Hospital).
+- **Estadio BWH** (Brigham and Women's Hospital) y **riesgo BAD** (bajo, alto, muy alto) con criterios de derivación a comité.
 - **Categoría EADO**: bajo riesgo, alto riesgo, localmente avanzado, metástasis
   locorregional o a distancia, con los **factores de alto riesgo** presentes (de los 9 de la guía).
 - **Veredictos** de margen quirúrgico, pruebas de imagen, radioterapia postoperatoria
   y tratamiento sistémico.
 - Recomendaciones de **cirugía, radioterapia, manejo ganglionar, estudio de extensión,
   tratamiento sistémico, paciente inmunodeprimido, seguimiento y prevención**.
-- **Evidencia posterior a las guías** (etiqueta «Post‑guía»): cemiplimab adyuvante (C‑POST, aprobado por la EMA en 2025) y KEYNOTE‑630.
+- **Evidencia posterior a las guías** (etiqueta «Post‑guía»): cemiplimab adyuvante (C‑POST, aprobado por la EMA en 2025), KEYNOTE‑630 y novedades de NCCN 2.2026 recogidas en JNCCN 2026 (adyuvancia y neoadyuvancia).
 - Filtro para ver las recomendaciones de **una sola guía** o solo la evidencia posterior.
 - **Resumen imprimible** del caso.
 
@@ -65,6 +66,8 @@ CEC invasivo: excluye la enfermedad de Bowen y los carcinomas epidermoides mucos
   carcinoma: a GRADE approach for evidence evaluation and recommendations by the Italian
   Association of Medical Oncology. *ESMO Open* 2024;9(5):103005.
 - AJCC Cancer Staging Manual, 8.ª edición. UICC TNM Classification of Malignant Tumours, 8.ª edición.
+- Paradela de la Morena S, et al. Management of cutaneous squamous cell carcinoma: review based on guidelines. Parts 1 and 2. *Actas Dermosifiliogr* 2026;117:104611 y 104612.
+- Ma VT. Therapeutic strategies for nonmelanoma skin cancers. *J Natl Compr Canc Netw* 2026;24(Suppl):24–26.
 - Evidencia posterior: Rischin D, et al. Adjuvant cemiplimab or placebo in high-risk cutaneous squamous-cell carcinoma (C‑POST). *N Engl J Med* 2025. KEYNOTE‑630: *J Clin Oncol* 2025;43(16 suppl):6000.
 
 ## Contenido del repositorio
