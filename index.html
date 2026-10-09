@@ -134,6 +134,7 @@ input[type="number"]::-webkit-outer-spin-button, input[type="number"]::-webkit-i
 .vlab { font: 600 11px/1.3 'JetBrains Mono', monospace; letter-spacing: .08em; text-transform: uppercase; color: var(--label); margin-bottom: 8px; }
 .vdet { font: 400 13px/1.5 'IBM Plex Sans', sans-serif; color: oklch(0.44 0.012 70); text-wrap: pretty; }
 .vpill { font: 600 18px/1.2 'IBM Plex Sans', sans-serif; padding: 10px 16px; border-radius: 4px; color: #fff; text-align: center; max-width: 100%; }
+.steps { margin: 10px 0 0 16px; display: flex; flex-direction: column; gap: 4px; font: 400 13px/1.45 'IBM Plex Sans', sans-serif; color: var(--ink-2); }
 .vlist { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 5px; }
 .vlist span { font: 500 11px/1.2 'IBM Plex Sans', sans-serif; padding: 4px 8px; border-radius: 3px; background: oklch(0.95 0.025 35); color: oklch(0.44 0.11 32); border: 1px solid oklch(0.87 0.05 35); }
 
@@ -333,6 +334,31 @@ input[type="number"]::-webkit-outer-spin-button, input[type="number"]::-webkit-i
             <button class="opt" data-k="mar" data-v="r2">Residuo macroscópico (R2)</button>
           </div>
         </div>
+
+        <div class="field" data-dis-k="r0">
+          <div class="lab">Distancia histológica del tumor al margen (mm)</div>
+          <div class="numrow">
+            <label class="numhint" style="display:flex;flex-direction:column;gap:5px;">Lateral
+              <input class="num" type="number" step="0.1" min="0" max="50" placeholder="mm" id="i-mlat"></label>
+            <label class="numhint" style="display:flex;flex-direction:column;gap:5px;">Profundo
+              <input class="num" type="number" step="0.1" min="0" max="50" placeholder="mm" id="i-mprof"></label>
+          </div>
+          <div class="hint">Margen lateral (periférico) y profundo más cercanos según el informe. Margen próximo: &lt; 1 mm (BAD, British Association of Dermatologists).</div>
+        </div>
+
+        <div class="field" data-dis-k="exc">
+          <div class="lab">Margen clínico empleado en la exéresis (mm)</div>
+          <div class="numrow">
+            <input class="num" type="number" step="1" min="0" max="50" placeholder="mm" id="i-mcli">
+            <span class="numhint">Opcional. Permite comparar con el margen recomendado según el riesgo.</span>
+          </div>
+          <div class="chips">
+            <button class="chip" data-num="mcli" data-v="4">4</button>
+            <button class="chip" data-num="mcli" data-v="5">5</button>
+            <button class="chip" data-num="mcli" data-v="6">6</button>
+            <button class="chip" data-num="mcli" data-v="10">10</button>
+          </div>
+        </div>
       </section>
 
       <section class="card form">
@@ -442,7 +468,7 @@ input[type="number"]::-webkit-outer-spin-button, input[type="number"]::-webkit-i
   // ---------------------------------------------------------------
   var DEFAULTS = {
     edad: '', inm: 'no', loc: 'hn', diam: '', rec: false, mul: false,
-    grosor: '', sc: false, gd: 'nd', des: false, osub: false, lvi: false, pni: 'no', hue: 'no', mar: 'pend',
+    grosor: '', sc: false, gd: 'nd', des: false, osub: false, lvi: false, pni: 'no', hue: 'no', mar: 'pend', mlat: '', mprof: '', mcli: '',
     nst: 'neg', nn: '1', nt: '3', nl: 'ipsi', ene: 'no', par: false, itm: false,
     m: 'M0', cur: 'si', ci: false
   };
@@ -453,7 +479,7 @@ input[type="number"]::-webkit-outer-spin-button, input[type="number"]::-webkit-i
     ene: ['no', 'si', 'nd'], m: ['M0', 'M1'], cur: ['si', 'no']
   };
   var BOOLS = ['rec', 'mul', 'sc', 'des', 'osub', 'lvi', 'par', 'itm', 'ci'];
-  var NUMS = ['edad', 'diam', 'grosor'];
+  var NUMS = ['edad', 'diam', 'grosor', 'mlat', 'mprof', 'mcli'];
 
   var S = assign({}, DEFAULTS, fromParams(location.hash));
   var guia = 'todas';
@@ -503,6 +529,15 @@ input[type="number"]::-webkit-outer-spin-button, input[type="number"]::-webkit-i
   // Motor de clasificación
   // ---------------------------------------------------------------
   function isHN() { return S.loc === 'hn' || S.loc === 'hr'; }
+
+  // Distancia histológica al margen en exéresis R0 (próximo: < 1 mm, BAD 2020)
+  function margInfo() {
+    var l = num('mlat'), p = num('mprof'), sides = [];
+    if (S.mar !== 'r0') return { close: false, sides: sides, known: false };
+    if (l !== null && l < 1) sides.push('lateral');
+    if (p !== null && p < 1) sides.push('profundo');
+    return { close: sides.length > 0, sides: sides, l: l, p: p, known: l !== null || p !== null };
+  }
 
   function deepInv() { var g = num('grosor'); return (g !== null && g > 6) || S.sc; }
 
@@ -598,9 +633,9 @@ input[type="number"]::-webkit-outer-spin-button, input[type="number"]::-webkit-i
     if (S.lvi) hi.push('invasión linfovascular');
     if (S.loc === 'hr') hi.push('oreja o labio');
     if (S.inm === 'vih' || S.inm === 'otra') hi.push('inmunodepresión iatrogénica o VIH');
-    var marg = S.mar === 'r1' || S.mar === 'r2';
-    if (marg && (vh.length || hi.length)) vh.push('márgenes afectos en tumor de alto riesgo');
-    else if (marg) hi.push('márgenes afectos');
+    var marg = S.mar === 'r1' || S.mar === 'r2' || margInfo().close;
+    if (marg && (vh.length || hi.length)) vh.push('márgenes afectos o próximos en tumor de alto riesgo');
+    else if (marg) hi.push('márgenes afectos o próximos');
     if (vh.length) return { k: 'vhigh', v: 'Muy alto', f: vh.concat(hi) };
     if (hi.length) return { k: 'high', v: 'Alto', f: hi, mdt: marg || hi.length >= 2 };
     return { k: 'low', v: 'Bajo', f: [] };
@@ -662,7 +697,7 @@ input[type="number"]::-webkit-outer-spin-button, input[type="number"]::-webkit-i
       } else {
         cir.push(it('CEC con factores de alto riesgo: margen clínico de 6–10 mm, ajustado a la valoración individual del riesgo, o cirugía micrográficamente controlada (Mohs con cortes en congelación o histología 3D en parafina).', ['EADO B, 2–3']));
         cir.push(it('AIOM recomienda un margen ≥ 6 mm en el CEC operable de alto riesgo y contempla la cirugía de Mohs frente a la exéresis simple en el CEC de alto riesgo o recidivado, en centros con experiencia.', ['AIOM condicional a favor']));
-        cir.push(it('Si un CEC operado como de bajo riesgo (margen de 5 mm) resulta de alto riesgo en la histología definitiva, puede discutirse una reampliación hasta obtener margen histológico libre.', ['EADO']));
+        if (num('mcli') === null) cir.push(it('Si un CEC operado como de bajo riesgo (margen de 5 mm) resulta de alto riesgo en la histología definitiva, puede discutirse una reampliación hasta obtener margen histológico libre.', ['EADO']));
       }
       var dm = num('diam');
       if (dm !== null) cir.push(it('British Association of Dermatologists (BAD): margen según el diámetro clínico: ≤ 20 mm, 4 mm; > 20–40 mm, 6 mm; > 40 mm, 10 mm. En este caso: ' + (dm <= 20 ? '4 mm' : dm <= 40 ? '6 mm' : '10 mm') + ', ampliable si hay otros factores de riesgo.', ['BAD 2020']));
@@ -676,7 +711,19 @@ input[type="number"]::-webkit-outer-spin-button, input[type="number"]::-webkit-i
       } else if (S.mar === 'pend') {
         cir.push(it('Tumores grandes o de cabeza y cuello: puede hacerse primero una biopsia en sacabocados o incisional para confirmar el diagnóstico y planificar la exéresis completa.', ['EADO A, 2']));
       }
-      if (S.mar === 'r0') cir.push(it('Si los márgenes informados son más estrechos que los recomendados (teniendo en cuenta la retracción de la pieza), debe considerarse una ampliación.', ['EADO']));
+      if (S.mar === 'r0') {
+        var mi = ctx.marg, mc = num('mcli'), mrec = cat === 'low' ? 5 : 6;
+        if (mi.close) {
+          cir.push(it('Margen histológico próximo (< 1 mm) en el borde ' + mi.sides.join(' y ') + ': se considera de riesgo. Opciones: reampliación hasta margen libre, cirugía de Mohs (sobre todo en zonas donde hay que preservar tejido) o radioterapia adyuvante si no es posible reintervenir.', ['BAD 2020', 'NCCN 2025'], 'warn'));
+          cir.push(it(cat === 'low' ? 'En un pT1 sin otros factores, el margen próximo eleva el tumor a riesgo alto; presentar en comité si se suma a otros factores.' : 'En un tumor de alto riesgo, el margen próximo lo clasifica como de muy alto riesgo: presentar en comité multidisciplinar antes de decidir.', ['BAD 2020'], 'warn'));
+          if (mi.sides.indexOf('profundo') >= 0) cir.push(it('La mayor parte del tumor residual tras la exéresis se localiza en el margen profundo: en la reampliación incluir el plano profundo (tejido subcutáneo, gálea o fascia según la zona).', ['EADO']));
+        } else if (mi.known) {
+          cir.push(it('Márgenes histológicos libres (≥ 1 mm): no requiere ampliación por el estado del margen.', ['BAD 2020']));
+        } else {
+          cir.push(it('Indique la distancia histológica al margen lateral y profundo: por debajo de 1 mm el margen se considera próximo y puede requerir ampliación.', ['BAD 2020'], 'info'));
+        }
+        if (mc !== null && mc < mrec && !mi.close) cir.push(it('Margen clínico empleado (' + String(mc).replace('.', ',') + ' mm) inferior al recomendado para este riesgo (' + (cat === 'low' ? '5 mm' : '6–10 mm') + '): debe considerarse una ampliación, teniendo en cuenta la retracción de la pieza. Si el tumor se operó como de bajo riesgo y la histología muestra factores de alto riesgo, puede discutirse la reampliación hasta margen histológico libre.', ['EADO'], 'warn'));
+      }
       cir.push(it('Las técnicas destructivas (electrocoagulación y curetaje, crioterapia, terapia fotodinámica, láser) no deben emplearse en el CEC invasivo primario. Excepción: CEC pequeños o múltiples en zonas de bajo riesgo cuando la cirugía o la radioterapia no son posibles o tienen consecuencias inaceptables.', ['EADO GPP']));
       cir.push(it('Curetaje y electrocoagulación: sólo en tumores de bajo riesgo bien delimitados, < 1 cm y en inmunocompetentes; evitar zonas pilosas y no usar si se alcanza la hipodermis, en recidivas ni en tumores de alto riesgo.', ['BAD 2020', 'NCCN 2025', 'AAD 2018']));
       if (S.mul) cir.push(it('Áreas con múltiples CEC invasivos agrupados (dorso de las manos, cuero cabelludo): puede ofrecerse la exéresis en bloque del campo con injerto cutáneo.', ['EADO']));
@@ -703,7 +750,7 @@ input[type="number"]::-webkit-outer-spin-button, input[type="number"]::-webkit-i
         rt.push(it('Con márgenes libres, la radioterapia adyuvante no debe ofrecerse como tratamiento estándar: no se ha demostrado un beneficio claro.', ['EADO C, 3']));
         if (bw.t === 'T2b' || bw.t === 'T3') rt.push(it('Con varios factores de riesgo (BWH ' + bw.t + ') y márgenes libres puede discutirse la radioterapia adyuvante: reduce la recidiva locorregional, sin efecto sobre la mortalidad específica.', ['EADO C, 4', 'BWH']));
         if (ctx.astro.length) rt.push(it('Variación entre guías: AIOM, que adopta los criterios de ASTRO, considera la radioterapia adyuvante en el CEC resecado de alto riesgo. En este caso concurre: ' + ctx.astro.join(', ') + '.', ['AIOM condicional a favor'], 'warn'));
-        if (S.pni === 'cl' || S.pni === 'ml' || S.lvi || S.inm !== 'no') rt.push(it('Indicaciones habituales de radioterapia adyuvante: márgenes próximos o dudosos, invasión perineural extensa, invasión linfovascular e inmunodepresión. Dosis de 45–50 Gy o equivalente, con sobreimpresión de 10–15 Gy si es necesario, iniciada en las 6 semanas siguientes a la cirugía.', ['NCCN 2025', 'BAD 2020']));
+        if (ctx.marg.close || S.pni === 'cl' || S.pni === 'ml' || S.lvi || S.inm !== 'no') rt.push(it('Indicaciones habituales de radioterapia adyuvante: márgenes próximos o dudosos, invasión perineural extensa, invasión linfovascular e inmunodepresión. Dosis de 45–50 Gy o equivalente, con sobreimpresión de 10–15 Gy si es necesario, iniciada en las 6 semanas siguientes a la cirugía.', ['NCCN 2025', 'BAD 2020']));
         if (S.pni === 'cl') rt.push(it('Invasión perineural extensa o de troncos nerviosos principales: incluir el trayecto proximal del nervio en el campo de irradiación; puede considerarse la resección del nervio afectado seguida de radioterapia, tras discusión en comité.', ['NCCN 2025', 'BAD 2020']));
       }
       if (S.pni === 'ms' && S.mar === 'r0') rt.push(it('CEC T1–T2 extirpado por completo con invasión perineural dérmica en nervios < 0,1 mm: no está indicada la radioterapia postoperatoria.', ['BAD 2020']));
@@ -720,7 +767,7 @@ input[type="number"]::-webkit-outer-spin-button, input[type="number"]::-webkit-i
         }
       }
       if (S.itm && S.cur !== 'no') rt.push(it('Metástasis satélite o en tránsito resecadas: la radioterapia adyuvante puede ser útil según series de casos.', ['EADO']));
-      var rtPost = (S.mar === 'r1' || S.mar === 'r2' || S.nst === 'pos' || (S.mar === 'r0' && (ctx.astro.length || bw.t === 'T2b' || bw.t === 'T3')));
+      var rtPost = (S.mar === 'r1' || S.mar === 'r2' || ctx.marg.close || S.nst === 'pos' || (S.mar === 'r0' && (ctx.astro.length || bw.t === 'T2b' || bw.t === 'T3')));
       if (rtPost && S.cur !== 'no') rt.push(it('No se recomienda añadir quimioterapia concomitante a la radioterapia postoperatoria del CEC resecado de alto riesgo: el ensayo aleatorizado con carboplatino no mostró beneficio en control locorregional, supervivencia libre de enfermedad ni global.', ['AIOM condicional en contra']));
     }
     secs.push({ t: 'Radioterapia', items: rt });
@@ -898,6 +945,35 @@ input[type="number"]::-webkit-outer-spin-button, input[type="number"]::-webkit-i
     return { v: '6–10 mm o CMC', d: 'Factores de alto riesgo: margen clínico de 6–10 mm o cirugía micrográficamente controlada (EADO); AIOM, ≥ 6 mm.' + extra, c: 'ok' };
   }
 
+  // Actitud tras la exéresis: necesidad de ampliación según el margen y pasos adicionales
+  function vActitud(c) {
+    var cat = c.cat.k, mi = c.marg, mc = num('mcli'), low = cat === 'low';
+    if (cat === 'dist' || S.cur === 'no') return null;
+    var r;
+    if (S.mar === 'pend') r = { v: 'Pendiente de exéresis', d: 'Margen clínico recomendado: ' + (low ? '5 mm (AIOM ≥ 4 mm).' : '6–10 mm o cirugía micrográficamente controlada (AIOM ≥ 6 mm).'), c: 'na' };
+    else if (S.mar === 'r1' || S.mar === 'r2') r = { v: 'Reampliar', d: 'Margen afecto: reampliación en todos los casos operables (o cirugía de Mohs); si no es posible, radioterapia postoperatoria.', c: 'alert' };
+    else if (mi.close) r = { v: low ? 'Valorar reampliación' : 'Comité: ampliar, Mohs o RT', d: 'Margen próximo (< 1 mm) en el borde ' + mi.sides.join(' y ') + '. Opciones: reampliación, cirugía de Mohs o radioterapia adyuvante.', c: 'maybe' };
+    else if (mc !== null && mc < (low ? 5 : 6)) r = { v: 'Considerar ampliación', d: 'Margen clínico de ' + String(mc).replace('.', ',') + ' mm, inferior al recomendado para este riesgo (' + (low ? '5 mm' : '6–10 mm') + '), aunque la histología sea libre.', c: 'maybe' };
+    else if (mi.known) r = { v: 'No precisa ampliar', d: 'Márgenes histológicos libres (≥ 1 mm)' + (mc !== null ? ' con margen clínico adecuado al riesgo.' : '.'), c: 'ok' };
+    else r = { v: 'Márgenes libres', d: 'Indique la distancia al margen lateral y profundo para confirmar que no es próximo (< 1 mm).', c: 'na' };
+
+    var steps = [];
+    if (c.bad.k === 'vhigh') steps.push('Presentar en comité multidisciplinar (riesgo BAD muy alto).');
+    else if (c.bad.k === 'high' && c.bad.mdt) steps.push('Presentar en comité multidisciplinar (riesgo BAD alto con margen afecto o próximo, o varios factores).');
+    var im = vImaging(cat);
+    if (S.mar !== 'pend' || cat !== 'low') steps.push('Imagen: ' + im.v + '. ' + im.d);
+    var rt = vRT(cat, c);
+    if (rt.v !== '—' && rt.v !== 'No indicada') steps.push('Radioterapia postoperatoria: ' + rt.v + '. ' + rt.d);
+    var sy = vSys(cat, c.adjCand);
+    if (sy.c !== 'no') steps.push('Tratamiento sistémico: ' + sy.v + '. ' + sy.d);
+    if (S.nst === 'pos') steps.push('Linfadenectomía terapéutica de la cuenca afectada.');
+    if (S.inm === 'tos') steps.push('Con el equipo de trasplante: retinoides orales y ajuste de la inmunosupresión (inhibidores de mTOR).');
+    if (S.mul && S.inm === 'no') steps.push('Quimioprevención: valorar nicotinamida 500 mg cada 12 horas.');
+    steps.push(low ? 'Seguimiento: exploración clínica cada 12 meses los años 1 y 2.' : cat === 'high' ? 'Seguimiento: cada 3–6 meses los años 1 y 2 con ecografía ganglionar, y después anual.' : 'Seguimiento: cada 3 meses los años 1 a 5, con ecografía e imagen periódica.');
+    r.steps = steps;
+    return r;
+  }
+
   function vImaging(cat) {
     var local = S.hue !== 'no' || deepInv() || S.pni === 'ml' || S.pni === 'cl';
     if (S.nst === 'sosp') return { v: 'Ecografía + PAAF', d: 'Confirmar la adenopatía sospechosa con PAAF o biopsia con aguja gruesa ecoguiada.', c: 'maybe' };
@@ -911,6 +987,8 @@ input[type="number"]::-webkit-outer-spin-button, input[type="number"]::-webkit-i
     if (cat === 'dist') return { v: 'Paliativa', d: 'Para síntomas o control local (24–35 Gy en 3–6 fracciones o 16–20 Gy en dosis única).', c: 'na' };
     if (S.cur === 'no') return { v: 'Definitiva / comité', d: 'Radioterapia primaria (± quimioterapia o cetuximab) si es factible; si no, tratamiento sistémico.', c: 'maybe' };
     if (S.mar === 'r1' || S.mar === 'r2') return { v: 'Si no se reamplía', d: 'Márgenes afectos no reampliables: 60–66 Gy en 30–33 fracciones.', c: 'ok' };
+    var hiRT = ctx.astro.length || ctx.bwh.t === 'T2b' || ctx.bwh.t === 'T3';
+    if (S.nst !== 'pos' && margInfo().close && !hiRT) return { v: 'Si no se reamplía', d: 'Margen próximo (< 1 mm): la radioterapia adyuvante es una opción si no se reamplía ni se hace cirugía de Mohs (NCCN, BAD).', c: 'maybe' };
     if (S.nst === 'pos') {
       if (isHN()) {
         if (S.ene === 'si' || S.nn === 'm' || S.nt !== '3' || S.par) return { v: 'Indicada', d: 'Adyuvante tras la linfadenectomía (extensión extraganglionar, varios ganglios, ganglio > 3 cm o afectación parotídea).', c: 'ok' };
@@ -922,7 +1000,7 @@ input[type="number"]::-webkit-outer-spin-button, input[type="number"]::-webkit-i
     }
     if (S.itm) return { v: 'A considerar', d: 'Metástasis satélite o en tránsito resecadas: la radioterapia adyuvante puede ser útil (series de casos).', c: 'maybe' };
     if (S.mar === 'pend') return { v: '—', d: 'Depende del estado de los márgenes tras la exéresis.', c: 'na' };
-    if (ctx.bwh.t === 'T2b' || ctx.bwh.t === 'T3' || ctx.astro.length) return { v: 'A discutir', d: 'Márgenes libres con factores de alto riesgo: no es estándar en EADO (discutible si BWH T2b/T3); AIOM la contempla con criterios ASTRO.', c: 'maybe' };
+    if (hiRT) return { v: 'A discutir', d: 'Márgenes libres con factores de alto riesgo: no es estándar en EADO (discutible si BWH T2b/T3); AIOM la contempla con criterios ASTRO.' + (margInfo().close ? ' Además hay margen próximo (< 1 mm): reampliar, Mohs o radioterapia.' : ''), c: 'maybe' };
     return { v: 'No indicada', d: 'Márgenes libres sin criterios de radioterapia adyuvante.', c: 'no' };
   }
 
@@ -964,7 +1042,7 @@ input[type="number"]::-webkit-outer-spin-button, input[type="number"]::-webkit-i
     // Candidato a valorar adyuvancia: M0, tratable con intención curativa y con indicación de RT postoperatoria
     var adjCand = S.m === 'M0' && S.cur === 'si' && (S.nst === 'pos' || S.itm || S.mar === 'r1' || S.mar === 'r2' ||
       (S.mar === 'r0' && as.length > 0));
-    return { sys: sys, T: T, N: N, M: M, st: st, bwh: bw, ef: ef, cat: cat, astro: as, adjCand: adjCand, tA: tA, bad: badRisk() };
+    return { marg: margInfo(), sys: sys, T: T, N: N, M: M, st: st, bwh: bw, ef: ef, cat: cat, astro: as, adjCand: adjCand, tA: tA, bad: badRisk() };
   }
 
   function render() {
@@ -976,7 +1054,7 @@ input[type="number"]::-webkit-outer-spin-button, input[type="number"]::-webkit-i
       b.setAttribute('data-sel', on ? '1' : '0');
       b.setAttribute('aria-pressed', on ? 'true' : 'false');
     }
-    var dis = { nodes: S.nst !== 'pos', nodeshn: S.nst !== 'pos' || !isHN() };
+    var dis = { nodes: S.nst !== 'pos', nodeshn: S.nst !== 'pos' || !isHN(), r0: S.mar !== 'r0', exc: S.mar === 'pend' };
     var ds = document.querySelectorAll('[data-dis-k]');
     for (var j = 0; j < ds.length; j++) ds[j].setAttribute('data-dis', dis[ds[j].getAttribute('data-dis-k')] ? '1' : '0');
 
@@ -1036,6 +1114,8 @@ input[type="number"]::-webkit-outer-spin-button, input[type="number"]::-webkit-i
     var pend = { v: '—', d: 'Introduzca al menos el diámetro clínico máximo para clasificar el riesgo.', c: 'na' };
     html += verdictHTML('Factores de alto riesgo (EADO)', fv, flist);
     html += verdictHTML('Margen quirúrgico', c.cat.pending ? pend : vMargin(c.cat.k));
+    var act = c.cat.pending ? null : vActitud(c);
+    if (act) html += verdictHTML('Actitud tras la exéresis', act, '<ul class="steps">' + act.steps.map(function (s) { return '<li>' + esc(s) + '</li>'; }).join('') + '</ul>');
     html += verdictHTML('Pruebas de imagen', c.cat.pending && S.nst !== 'sosp' ? pend : vImaging(c.cat.k));
     html += verdictHTML('Radioterapia postoperatoria', vRT(c.cat.k, c));
     html += verdictHTML('Tratamiento sistémico', vSys(c.cat.k, c.adjCand));
@@ -1085,7 +1165,7 @@ input[type="number"]::-webkit-outer-spin-button, input[type="number"]::-webkit-i
       '\nEdad: ' + (e === null ? '—' : e + ' años') + ' · Inmunodepresión: ' + I[S.inm] +
       '\nLocalización: ' + L[S.loc] + ' · Diámetro clínico: ' + (d === null ? '—' : d + ' mm') + (S.rec ? ' · recidivado' : '') + (S.mul ? ' · múltiples CEC' : '') +
       '\nEspesor: ' + (g === null ? '—' : String(g).replace('.', ',') + ' mm') + (S.sc ? ' · más allá de la grasa subcutánea' : '') + ' · ' + G[S.gd] + (S.des ? ' · desmoplásico' : '') + (S.osub ? ' · subtipo agresivo' : '') +
-      '\nInvasión perineural: ' + P[S.pni] + ' · Hueso: ' + H[S.hue] + ' · Márgenes: ' + MA[S.mar] +
+      '\nInvasión perineural: ' + P[S.pni] + ' · Hueso: ' + H[S.hue] + ' · Márgenes: ' + MA[S.mar] + (S.mar === 'r0' && (num('mlat') !== null || num('mprof') !== null) ? ' (lateral ' + (num('mlat') === null ? '—' : String(num('mlat')).replace('.', ',')) + ' mm, profundo ' + (num('mprof') === null ? '—' : String(num('mprof')).replace('.', ',')) + ' mm)' : '') + (num('mcli') !== null && S.mar !== 'pend' ? ' · margen clínico ' + num('mcli') + ' mm' : '') +
       '\nGanglios: ' + NS[S.nst] + nodes + (S.itm ? ' · satélites / en tránsito' : '') +
       '\nM: ' + S.m + ' · Candidato a tratamiento curativo: ' + (S.cur === 'si' ? 'sí' : 'no') + (S.ci ? ' · anti‑PD‑1 contraindicado o fallido' : '') +
       '\n' + sysLab + ': ' + tnm + '  |  Estadio: ' + (c.st || '—') + '  |  BWH: ' + c.bwh.t +

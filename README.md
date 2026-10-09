@@ -20,6 +20,8 @@ estado ganglionar y metástasis) la aplicación devuelve:
 - **Estadio BWH** (Brigham and Women's Hospital) y **riesgo BAD** (bajo, alto, muy alto) con criterios de derivación a comité.
 - **Categoría EADO**: bajo riesgo, alto riesgo, localmente avanzado, metástasis
   locorregional o a distancia, con los **factores de alto riesgo** presentes (de los 9 de la guía).
+- **Actitud tras la exéresis** según la distancia histológica al margen lateral y profundo y el margen
+  clínico empleado: si precisa ampliación o no, y los pasos adicionales que corresponden al tumor.
 - **Veredictos** de margen quirúrgico, pruebas de imagen, radioterapia postoperatoria
   y tratamiento sistémico.
 - Recomendaciones de **cirugía, radioterapia, manejo ganglionar, estudio de extensión,
