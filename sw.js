@@ -2,7 +2,7 @@
    La interfaz y la lógica viajan en index.html; se cachean además las
    fuentes y los iconos para que funcione sin conexión. */
 
-const VERSION = 'cec-v5';
+const VERSION = 'cec-v6';
 const ASSETS = [
   './',
   './index.html',

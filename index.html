@@ -817,7 +817,7 @@ input[type="number"]::-webkit-outer-spin-button, input[type="number"]::-webkit-i
       ex.push(it('Alto riesgo: estadificar la posible afectación ganglionar no palpable, preferentemente con ecografía o TC.', ['EADO GPP', 'AIOM condicional a favor']));
       ex.push(it('La ecografía ganglionar realizada por manos expertas es más sensible que la exploración (91 % frente a 50 %), pero genera falsos positivos que deben aclararse con PAAF.', ['EADO']));
     } else if (cat === 'lac') {
-      ex.push(it('CEC localmente avanzado: imagen para descartar metástasis y valoración en comité multidisciplinar con un radiólogo.', ['EADO GPP']));
+      ex.push(it('CEC localmente avanzado: TC o RM para delimitar la extensión local y TC o PET‑TC para descartar metástasis a distancia, con valoración en comité multidisciplinar que incluya un radiólogo.', ['EADO GPP']));
     } else {
       ex.push(it('Afectación ganglionar, en tránsito o a distancia: exploración cutánea completa y estudio de imagen (TC o PET‑TC) para descartar enfermedad metastásica a distancia.', ['EADO GPP']));
     }
@@ -979,7 +979,7 @@ input[type="number"]::-webkit-outer-spin-button, input[type="number"]::-webkit-i
     if (S.nst === 'sosp') return { v: 'Ecografía + PAAF', d: 'Confirmar la adenopatía sospechosa con PAAF o biopsia con aguja gruesa ecoguiada.', c: 'maybe' };
     if (cat === 'low') return { v: 'No precisa', d: 'Exploración física y palpación ganglionar; imagen sólo si la exploración lo indica.', c: 'no' };
     if (cat === 'high') return { v: 'Ecografía o TC', d: 'Estadificar la afectación ganglionar no palpable.' + (local ? ' Además, TC o RM para la extensión local.' : ''), c: 'ok' };
-    if (cat === 'lac') return { v: 'TC/RM + extensión', d: 'Imagen local y estudio para descartar metástasis, valorados en comité con radiólogo.', c: 'ok' };
+    if (cat === 'lac') return { v: 'TC/RM local + TC o PET‑TC', d: 'TC o RM para la extensión local y TC o PET‑TC para descartar metástasis a distancia, valorados en comité con radiólogo.', c: 'ok' };
     return { v: 'TC o PET‑TC', d: 'Descartar enfermedad a distancia y completar la exploración cutánea.' + (local ? ' RM si hay invasión perineural o de estructuras profundas.' : ''), c: 'ok' };
   }
 
