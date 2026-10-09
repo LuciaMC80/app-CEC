@@ -22,7 +22,7 @@ estado ganglionar y metástasis) la aplicación devuelve:
   locorregional o a distancia, con los **factores de alto riesgo** presentes (de los 9 de la guía).
 - **Actitud tras la exéresis** según la distancia histológica al margen lateral y profundo y el margen
   clínico empleado: si precisa ampliación o no, y los pasos adicionales que corresponden al tumor.
-- **Veredictos** de margen quirúrgico, pruebas de imagen, radioterapia postoperatoria
+- **Veredictos** de margen quirúrgico, pruebas de imagen, ganglio centinela, radioterapia postoperatoria
   y tratamiento sistémico.
 - Recomendaciones de **cirugía, radioterapia, manejo ganglionar, estudio de extensión,
   tratamiento sistémico, paciente inmunodeprimido, seguimiento y prevención**.

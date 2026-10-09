@@ -962,6 +962,8 @@ input[type="number"]::-webkit-outer-spin-button, input[type="number"]::-webkit-i
     else if (c.bad.k === 'high' && c.bad.mdt) steps.push('Presentar en comité multidisciplinar (riesgo BAD alto con margen afecto o próximo, o varios factores).');
     var im = vImaging(cat);
     if (S.mar !== 'pend' || cat !== 'low') steps.push('Imagen: ' + im.v + '. ' + im.d);
+    var sl = vSLNB(c);
+    if (sl.c === 'maybe') steps.push('Ganglio centinela: ' + sl.v.toLowerCase() + ' (BWH ' + c.bwh.t + ', inmunocompetente).');
     var rt = vRT(cat, c);
     if (rt.v !== '—' && rt.v !== 'No indicada') steps.push('Radioterapia postoperatoria: ' + rt.v + '. ' + rt.d);
     var sy = vSys(cat, c.adjCand);
@@ -972,6 +974,21 @@ input[type="number"]::-webkit-outer-spin-button, input[type="number"]::-webkit-i
     steps.push(low ? 'Seguimiento: exploración clínica cada 12 meses los años 1 y 2.' : cat === 'high' ? 'Seguimiento: cada 3–6 meses los años 1 y 2 con ecografía ganglionar, y después anual.' : 'Seguimiento: cada 3 meses los años 1 a 5, con ecografía e imagen periódica.');
     r.steps = steps;
     return r;
+  }
+
+  // Biopsia selectiva del ganglio centinela (BSGC)
+  function vSLNB(c) {
+    var cat = c.cat.k, t = c.bwh.t;
+    if (cat === 'dist') return { v: 'No indicada', d: 'Enfermedad a distancia: no aporta información para el manejo.', c: 'no' };
+    if (S.nst === 'pos') return { v: 'No indicada', d: 'Metástasis ganglionar ya confirmada: linfadenectomía terapéutica.', c: 'no' };
+    if (S.nst === 'sosp') return { v: 'No indicada', d: 'Adenopatía sospechosa: confirmar con PAAF o biopsia con aguja gruesa ecoguiada.', c: 'no' };
+    if (S.cur === 'no') return { v: 'No indicada', d: 'No candidato a tratamiento curativo: el tratamiento es sistémico.', c: 'no' };
+    if (c.cat.pending) return { v: '—', d: 'Introduzca el diámetro clínico y los datos histológicos.', c: 'na' };
+    if (t === 'T2b' || t === 'T3') {
+      if (S.inm !== 'no') return { v: 'No recomendada', d: 'BWH ' + t + ' en inmunodeprimido: EADO y AIOM no la recomiendan y el posible beneficio descrito en muy alto riesgo no se extiende a los inmunodeprimidos.', c: 'no' };
+      return { v: 'A discutir en comité', d: 'BWH ' + t + ' (positividad del centinela ~' + (t === 'T3' ? '50' : '29') + ' %): NCCN y BAD la consideran opcional en el muy alto riesgo en inmunocompetentes; EADO y AIOM no la recomiendan como estándar.', c: 'maybe' };
+    }
+    return { v: 'No indicada', d: 'No recomendada como estándar en el CEC (EADO X, 3; AIOM condicional en contra).' + (t === 'T2a' ? ' Positividad en BWH T2a ~7 %.' : ''), c: 'no' };
   }
 
   function vImaging(cat) {
@@ -1117,6 +1134,7 @@ input[type="number"]::-webkit-outer-spin-button, input[type="number"]::-webkit-i
     var act = c.cat.pending ? null : vActitud(c);
     if (act) html += verdictHTML('Actitud tras la exéresis', act, '<ul class="steps">' + act.steps.map(function (s) { return '<li>' + esc(s) + '</li>'; }).join('') + '</ul>');
     html += verdictHTML('Pruebas de imagen', c.cat.pending && S.nst !== 'sosp' ? pend : vImaging(c.cat.k));
+    html += verdictHTML('Ganglio centinela', vSLNB(c));
     html += verdictHTML('Radioterapia postoperatoria', vRT(c.cat.k, c));
     html += verdictHTML('Tratamiento sistémico', vSys(c.cat.k, c.adjCand));
 
