@@ -22,7 +22,8 @@ estado ganglionar y metástasis) la aplicación devuelve:
   y tratamiento sistémico.
 - Recomendaciones de **cirugía, radioterapia, manejo ganglionar, estudio de extensión,
   tratamiento sistémico, paciente inmunodeprimido, seguimiento y prevención**.
-- Filtro para ver las recomendaciones de **una sola guía**.
+- **Evidencia posterior a las guías** (etiqueta «Post‑guía»): cemiplimab adyuvante (C‑POST, aprobado por la EMA en 2025) y KEYNOTE‑630.
+- Filtro para ver las recomendaciones de **una sola guía** o solo la evidencia posterior.
 - **Resumen imprimible** del caso.
 
 ## Uso en el móvil
@@ -64,6 +65,7 @@ CEC invasivo: excluye la enfermedad de Bowen y los carcinomas epidermoides mucos
   carcinoma: a GRADE approach for evidence evaluation and recommendations by the Italian
   Association of Medical Oncology. *ESMO Open* 2024;9(5):103005.
 - AJCC Cancer Staging Manual, 8.ª edición. UICC TNM Classification of Malignant Tumours, 8.ª edición.
+- Evidencia posterior: Rischin D, et al. Adjuvant cemiplimab or placebo in high-risk cutaneous squamous-cell carcinoma (C‑POST). *N Engl J Med* 2025. KEYNOTE‑630: *J Clin Oncol* 2025;43(16 suppl):6000.
 
 ## Contenido del repositorio
 
