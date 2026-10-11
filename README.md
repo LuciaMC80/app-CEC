@@ -4,7 +4,7 @@ Herramienta web de apoyo a la decisión clínica para estadificar el carcinoma
 epidermoide cutáneo (CEC) invasivo y obtener las recomendaciones de manejo de las
 guías **EADO 2023** (European Association of Dermato‑Oncology, partes 1 y 2),
 **AIOM 2024** (Associazione Italiana di Oncologia Medica), **BAD 2020** (British Association
-of Dermatologists), **NCCN** (National Comprehensive Cancer Network) y otras guías nacionales,
+of Dermatologists), **NCCN 1.2027** (National Comprehensive Cancer Network, octubre de 2026) y otras guías nacionales,
 con la evidencia posterior más relevante. Cada recomendación indica la guía de la que procede.
 
 **Abrir la aplicación:** https://luciamc80.github.io/app-CEC/
@@ -17,6 +17,9 @@ estado ganglionar y metástasis) la aplicación devuelve:
 
 - **TNM y estadio**: AJCC‑8 (American Joint Committee on Cancer) para cabeza y cuello y
   UICC‑8 (Union for International Cancer Control) para tronco y extremidades.
+- **Riesgo NCCN 1.2027** (bajo, alto o muy alto), con factores clínicos propios (manos, pies, región
+  pretibial o anogenital, bordes mal definidos, radioterapia previa o úlcera de Marjolin, crecimiento
+  rápido y síntomas neurológicos).
 - **Estadio BWH** (Brigham and Women's Hospital) y **riesgo BAD** (bajo, alto, muy alto) con criterios de derivación a comité.
 - **Categoría EADO**: bajo riesgo, alto riesgo, localmente avanzado, metástasis
   locorregional o a distancia, con los **factores de alto riesgo** presentes (de los 9 de la guía).
@@ -60,6 +63,12 @@ CEC invasivo: excluye la enfermedad de Bowen y los carcinomas epidermoides mucos
 
 ## Fuentes
 
+- NCCN Clinical Practice Guidelines in Oncology: Squamous Cell Skin Cancer, versión 1.2027
+  (8 de octubre de 2026). Se recogen sus recomendaciones de práctica clínica (estratificación,
+  cirugía, radioterapia con dosis, manejo ganglionar y en tránsito, tratamiento sistémico,
+  cemiplimab adyuvante, cancerización de campo y seguimiento), redactadas de nuevo y sin
+  reproducir sus algoritmos ni figuras. Consulte el documento original en nccn.org.
+
 - Stratigos AJ, et al. European consensus-based interdisciplinary guideline for invasive
   cutaneous squamous cell carcinoma. Part 1: Diagnostics and prevention — Update 2023.
   *Eur J Cancer* 2023;193:113251.
@@ -71,11 +80,10 @@ CEC invasivo: excluye la enfermedad de Bowen y los carcinomas epidermoides mucos
   Association of Medical Oncology. *ESMO Open* 2024;9(5):103005.
 - AJCC Cancer Staging Manual, 8.ª edición. UICC TNM Classification of Malignant Tumours, 8.ª edición.
 - Keohane SG, et al. British Association of Dermatologists guidelines for cutaneous squamous cell carcinoma 2020. *Br J Dermatol* 2021;184:401–414.
-- NCCN Guidelines, Squamous Cell Skin Cancer, versiones 2.2025 y 2.2026.
 - Kim JYS, et al. AAD guidelines of care for cutaneous squamous cell carcinoma. *J Am Acad Dermatol* 2018;78:560–578.
 - Leiter U, et al. German S3 guideline actinic keratosis and cSCC, update 2023. *EJC Skin Cancer* 2023;1:100004.
 - Peris K, et al. Cutaneous squamous cell carcinoma: Italian guidelines by SIDeMaST.
-- Las recomendaciones de BAD, NCCN, AAD, S3 alemana y SIDeMaST se recogieron de la revisión comparativa de Paradela de la Morena S, et al. *Actas Dermosifiliogr* 2026;117:104611 y 104612.
+- Las recomendaciones de BAD, AAD, S3 alemana y SIDeMaST se recogieron de la revisión comparativa de Paradela de la Morena S, et al. *Actas Dermosifiliogr* 2026;117:104611 y 104612.
 - Ma VT. Therapeutic strategies for nonmelanoma skin cancers. *J Natl Compr Canc Netw* 2026;24(Suppl):24–26.
 - Evidencia posterior: Rischin D, et al. Adjuvant cemiplimab or placebo in high-risk cutaneous squamous-cell carcinoma (C‑POST). *N Engl J Med* 2025. KEYNOTE‑630: *J Clin Oncol* 2025;43(16 suppl):6000.
 

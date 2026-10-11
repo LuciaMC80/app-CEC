@@ -264,6 +264,18 @@ input[type="number"]::-webkit-outer-spin-button, input[type="number"]::-webkit-i
             <button class="opt" data-k="mul" data-v="toggle">Múltiples CEC</button>
           </div>
         </div>
+
+        <div class="field">
+          <div class="lab">Factores clínicos de riesgo (NCCN)</div>
+          <div class="opts stack">
+            <button class="opt" data-k="acr" data-v="toggle">Manos, pies, región pretibial o anogenital</button>
+            <button class="opt" data-k="bmd" data-v="toggle">Bordes clínicos mal definidos</button>
+            <button class="opt" data-k="rtc" data-v="toggle">Radioterapia previa, inflamación crónica o úlcera de Marjolin</button>
+            <button class="opt" data-k="rap" data-v="toggle">Crecimiento rápido</button>
+            <button class="opt" data-k="neu" data-v="toggle">Síntomas neurológicos</button>
+          </div>
+          <div class="hint">Criterios de la estratificación de la NCCN 1.2027 que no recogen el resto de clasificaciones.</div>
+        </div>
       </section>
 
       <section class="card form">
@@ -470,7 +482,8 @@ input[type="number"]::-webkit-outer-spin-button, input[type="number"]::-webkit-i
     edad: '', inm: 'no', loc: 'hn', diam: '', rec: false, mul: false,
     grosor: '', sc: false, gd: 'nd', des: false, osub: false, lvi: false, pni: 'no', hue: 'no', mar: 'pend', mlat: '', mprof: '', mcli: '',
     nst: 'neg', nn: '1', nt: '3', nl: 'ipsi', ene: 'no', par: false, itm: false,
-    m: 'M0', cur: 'si', ci: false
+    m: 'M0', cur: 'si', ci: false,
+    acr: false, bmd: false, rtc: false, rap: false, neu: false
   };
   var ALLOWED = {
     inm: ['no', 'tos', 'hem', 'vih', 'otra'], loc: ['hn', 'hr', 'tr', 'ex'], gd: ['bien', 'pobre', 'nd'],
@@ -478,7 +491,7 @@ input[type="number"]::-webkit-outer-spin-button, input[type="number"]::-webkit-i
     nst: ['neg', 'sosp', 'pos'], nn: ['1', 'm'], nt: ['3', '6', '6p'], nl: ['ipsi', 'contra'],
     ene: ['no', 'si', 'nd'], m: ['M0', 'M1'], cur: ['si', 'no']
   };
-  var BOOLS = ['rec', 'mul', 'sc', 'des', 'osub', 'lvi', 'par', 'itm', 'ci'];
+  var BOOLS = ['rec', 'mul', 'sc', 'des', 'osub', 'lvi', 'par', 'itm', 'ci', 'acr', 'bmd', 'rtc', 'rap', 'neu'];
   var NUMS = ['edad', 'diam', 'grosor', 'mlat', 'mprof', 'mcli'];
 
   var S = assign({}, DEFAULTS, fromParams(location.hash));
@@ -641,6 +654,45 @@ input[type="number"]::-webkit-outer-spin-button, input[type="number"]::-webkit-i
     return { k: 'low', v: 'Bajo', f: [] };
   }
 
+  // Estratificación de riesgo de NCCN 1.2027 (SCC‑2): la categoría la marca el factor de mayor riesgo
+  function nccnRisk() {
+    var d = num('diam'), g = num('grosor'), vh = [], hi = [];
+    var central = isHN() || S.acr || S.loc === 'ex';
+    if (d !== null && d > 40) vh.push('diámetro > 4 cm');
+    if (S.gd === 'pobre') vh.push('pobremente diferenciado');
+    if (deepInv() || S.hue !== 'no') vh.push('espesor > 6 mm o invasión más allá de la grasa');
+    if (S.pni === 'ml' || S.pni === 'cl') vh.push('invasión perineural profunda a la dermis o ≥ 0,1 mm');
+    if (S.lvi) vh.push('invasión linfática o vascular');
+    if (central) hi.push('cabeza, cuello, manos, pies, pretibial o anogenital');
+    else if (d !== null && d >= 20 && d <= 40) hi.push('tronco o extremidades de 2–4 cm');
+    if (S.bmd) hi.push('bordes mal definidos');
+    if (S.rec) hi.push('recidivado');
+    if (S.inm !== 'no') hi.push('inmunodepresión');
+    if (S.rtc) hi.push('radioterapia previa, inflamación crónica o úlcera de Marjolin');
+    if (S.rap) hi.push('crecimiento rápido');
+    if (S.neu) hi.push('síntomas neurológicos');
+    if (S.osub) hi.push('subtipo adenoescamoso o sarcomatoide');
+    if (g !== null && g >= 2 && g <= 6 && !S.sc) hi.push('espesor de 2–6 mm');
+    if (S.pni === 'ms') hi.push('invasión perineural dérmica');
+    if (vh.length) return { k: 'vhigh', v: 'Muy alto', f: vh.concat(hi), n: vh.length + hi.length };
+    if (hi.length) return { k: 'high', v: 'Alto', f: hi, n: hi.length };
+    if (d === null) return { k: 'nd', v: '—', f: [] };
+    return { k: 'low', v: 'Bajo', f: [] };
+  }
+
+  // Rasgos de riesgo extremadamente alto con los que se estudió el cemiplimab adyuvante (C‑POST; NCCN 1.2027)
+  function extremeFeatures() {
+    var f = [];
+    if (S.nst === 'pos' && S.ene === 'si' && S.nt !== '3') f.push('ganglio > 2 cm con extensión extraganglionar');
+    else if (S.nst === 'pos' && S.ene === 'si') f.push('extensión extraganglionar (comprobar que el ganglio mayor mide ≥ 20 mm)');
+    if (S.nst === 'pos' && S.nn === 'm') f.push('varios ganglios (el criterio exige ≥ 3)');
+    if (S.itm) f.push('metástasis en tránsito');
+    if (S.hue === 'ct' || S.hue === 'sb') f.push('T4 con invasión ósea');
+    if (S.pni === 'cl') f.push('invasión perineural clínica o radiológica');
+    if (S.rec) f.push('recidiva (sólo con rasgos adicionales concretos)');
+    return f;
+  }
+
   // Criterios ASTRO adoptados por AIOM para RT adyuvante
   function astro(tAjcc) {
     var r = [];
@@ -676,6 +728,8 @@ input[type="number"]::-webkit-outer-spin-button, input[type="number"]::-webkit-i
     cl.push(it('BWH (Brigham and Women\'s Hospital, 2013). Cuenta 4 factores: diámetro ≥ 2 cm, pobremente diferenciado, invasión perineural en nervio ≥ 0,1 mm e invasión más allá de la grasa subcutánea (sin incluir el hueso). T1, ninguno; T2a, uno; T2b, dos o tres; T3, los cuatro o invasión ósea. Es el sistema con mayor especificidad para predecir metástasis y muerte específica.' + este(bw.t !== '—' ? bw.t + (bw.f.length ? ' (' + bw.f.join(', ') + ')' : '') : ''), ['BWH', 'EADO']));
     cl.push(it('BAD (British Association of Dermatologists, 2020). Bajo riesgo: ≤ 20 mm, espesor ≤ 4 mm, invasión dérmica, sin invasión perineural ni linfovascular y bien o moderadamente diferenciado. Alto riesgo: > 20–40 mm, espesor > 4–6 mm, invasión subcutánea, invasión perineural dérmica < 0,1 mm, pobremente diferenciado, invasión linfovascular, oreja o labio, o inmunodepresión iatrogénica, por biológicos o VIH. Muy alto riesgo: > 40 mm, espesor > 6 mm, invasión más allá del subcutáneo o hueso, invasión perineural subdérmica o ≥ 0,1 mm, histología agresiva, metástasis en tránsito, trasplante o hemopatía, o márgenes afectos en tumor de alto riesgo.' + este(ctx.cat.pending ? '' : 'riesgo ' + ctx.bad.v.toLowerCase()), ['BAD 2020']));
     cl.push(it('EADO (European Association of Dermato‑Oncology, 2023). CEC primario común de bajo riesgo (sin factores) o de alto riesgo (≥ 1 de 9 factores), localmente avanzado (no curable con cirugía ni radioterapia), con metástasis locorregional (ganglionar o en tránsito) o a distancia.' + este(ctx.cat.pending ? '' : ctx.cat.v.toLowerCase()), ['EADO A, 1']));
+    cl.push(it('NCCN 1.2027 (riesgo de recidiva local, metástasis o muerte; manda el factor de mayor riesgo). Bajo: tronco o extremidades < 2 cm, bien delimitado, primario, sin inmunodepresión, bien o moderadamente diferenciado, espesor < 2 mm sin invasión perineural ni linfovascular. Alto: tronco o extremidades de 2–4 cm, o cabeza, cuello, manos, pies, región pretibial o anogenital de cualquier tamaño; bordes mal definidos; recidiva; inmunodepresión; radioterapia previa, inflamación crónica o úlcera de Marjolin; crecimiento rápido; síntomas neurológicos; subtipo adenoescamoso o sarcomatoide; espesor de 2–6 mm; invasión perineural. Muy alto: > 4 cm en cualquier localización; pobremente diferenciado; > 6 mm o más allá de la grasa; invasión perineural en nervio profundo a la dermis o ≥ 0,1 mm; invasión linfática o vascular.' + este(ctx.nccn.k === 'nd' ? '' : 'riesgo ' + ctx.nccn.v.toLowerCase() + (ctx.nccn.f.length ? ' (' + ctx.nccn.f.join(', ') + ')' : '')), ['NCCN 2A'], ctx.nccn.k === 'vhigh' ? 'warn' : 'std'));
+    cl.push(it('El grupo de alto riesgo tiene más riesgo de recidiva local; el de muy alto riesgo, además, de metástasis. El subtipo acantolítico, el infiltrativo y el fusocelular son rasgos informables, pero no factores de riesgo en la NCCN; el verrugoso es de bajo riesgo.', ['NCCN']));
     secs.push({ t: 'Clasificación y estadiaje', items: cl });
 
     // --- Cirugía del tumor primario ---
@@ -699,10 +753,17 @@ input[type="number"]::-webkit-outer-spin-button, input[type="number"]::-webkit-i
         cir.push(it('AIOM recomienda un margen ≥ 6 mm en el CEC operable de alto riesgo y contempla la cirugía de Mohs frente a la exéresis simple en el CEC de alto riesgo o recidivado, en centros con experiencia.', ['AIOM condicional a favor']));
         if (num('mcli') === null) cir.push(it('Si un CEC operado como de bajo riesgo (margen de 5 mm) resulta de alto riesgo en la histología definitiva, puede discutirse una reampliación hasta obtener margen histológico libre.', ['EADO']));
       }
+      var nk = ctx.nccn.k;
+      if (nk === 'low') cir.push(it('NCCN, bajo riesgo: exéresis estándar con 4–6 mm de margen clínico y estudio postoperatorio de márgenes, sin colgajos ni despegamientos extensos hasta confirmar márgenes libres (sí segunda intención, cierre lineal o injerto); Mohs u otra técnica PDEMA; curetaje y electrocoagulación (menor tasa de curación que la exéresis) o afeitado; si el tumor parece sobrepasar la dermis, extirpar. Radioterapia en quien no es candidato quirúrgico.', ['NCCN 2A']));
+      else if (nk === 'high' || nk === 'vhigh') {
+        cir.push(it('NCCN, riesgo ' + (nk === 'vhigh' ? 'muy alto' : 'alto') + ': considerar una consulta multidisciplinar en un centro con experiencia. Cirugía de Mohs u otra técnica PDEMA (preferente en el muy alto riesgo) o exéresis estándar con márgenes más amplios, decididos caso a caso, con estudio postoperatorio y cierre por segunda intención, lineal o con injerto. Si invade la fascia parotídea, puede estar indicada la parotidectomía superficial. En quien no es candidato quirúrgico, radioterapia definitiva.', ['NCCN 2A'], nk === 'vhigh' ? 'warn' : 'std'));
+        if (isHN() || S.acr) cir.push(it('Cabeza, cuello, manos, pies, región pretibial o anogenital: los márgenes estrechos por limitaciones anatómicas aumentan las recidivas con el estudio histológico convencional, por lo que se recomienda Mohs o PDEMA; en tumores < 6 mm sin otros factores, otras técnicas si se consiguen al menos 4 mm de margen clínico libre sin distorsión anatómica ni funcional.', ['NCCN']));
+        if (nk === 'vhigh') cir.push(it('Muy alto riesgo (NCCN): estadificación radiológica (RM con y sin contraste, o TC con contraste y/o ecografía). Considerar cemiplimab neoadyuvante si el tumor crece muy rápido (no queratoacantomatoso), hay metástasis en tránsito o invasión linfovascular, es resecable en el límite o la cirugía sola puede no ser curativa o causar una limitación funcional importante.', ['NCCN 2A'], 'warn'));
+      }
       var dm = num('diam');
       if (dm !== null) cir.push(it('British Association of Dermatologists (BAD): margen según el diámetro clínico: ≤ 20 mm, 4 mm; > 20–40 mm, 6 mm; > 40 mm, 10 mm. En este caso: ' + (dm <= 20 ? '4 mm' : dm <= 40 ? '6 mm' : '10 mm') + ', ampliable si hay otros factores de riesgo.', ['BAD 2020']));
       cir.push(it('Para lograr márgenes histológicos libres: delimitar con lupa o dermatoscopio, profundizar al menos hasta la mitad del panículo adiposo, incluir la gálea en el cuero cabelludo y valorar fascia, músculo o hueso si hay infiltración clínica o radiológica.', ['AAD 2018', 'BAD 2020']));
-      if (cat !== 'low') cir.push(it('Cirugía con evaluación completa del margen periférico y profundo (Mohs o técnicas equivalentes): especialmente indicada en lesiones de alto riesgo, recidivadas o en zonas donde hay que preservar tejido. La British Association of Dermatologists (BAD), la guía S3 alemana y la italiana la restringen a casos individualizados tras discusión en comité; en variantes agresivas, como la sarcomatoide, los cortes en congelación son menos fiables.', ['NCCN 2025', 'AAD 2018', 'BAD 2020', 'S3 alemana']));
+      if (cat !== 'low') cir.push(it('Cirugía con evaluación completa del margen periférico y profundo (Mohs o técnicas equivalentes): especialmente indicada en lesiones de alto riesgo, recidivadas o en zonas donde hay que preservar tejido. La British Association of Dermatologists (BAD), la guía S3 alemana y la italiana la restringen a casos individualizados tras discusión en comité; en variantes agresivas, como la sarcomatoide, los cortes en congelación son menos fiables.', ['NCCN', 'AAD 2018', 'BAD 2020', 'S3 alemana']));
       if (isHN() || S.loc === 'ex') cir.push(it('Zonas funcional o estéticamente sensibles (cara, labio, oreja, párpado): considerar la cirugía micrográficamente controlada.', ['EADO B, 2–3']));
       cir.push(it('La profundidad de la exéresis debe incluir el tejido subcutáneo (y la gálea en el cuero cabelludo), respetando pericondrio y periostio si no están afectados.', ['EADO']));
       cir.push(it('No reconstruir con colgajos de tejido local hasta confirmar histológicamente la resección R0.', ['EADO GPP']));
@@ -714,7 +775,7 @@ input[type="number"]::-webkit-outer-spin-button, input[type="number"]::-webkit-i
       if (S.mar === 'r0') {
         var mi = ctx.marg, mc = num('mcli'), mrec = cat === 'low' ? 5 : 6;
         if (mi.close) {
-          cir.push(it('Margen histológico próximo (< 1 mm) en el borde ' + mi.sides.join(' y ') + ': se considera de riesgo. Opciones: reampliación hasta margen libre, cirugía de Mohs (sobre todo en zonas donde hay que preservar tejido) o radioterapia adyuvante si no es posible reintervenir.', ['BAD 2020', 'NCCN 2025'], 'warn'));
+          cir.push(it('Margen histológico próximo (< 1 mm) en el borde ' + mi.sides.join(' y ') + ': se considera de riesgo. Opciones: reampliación hasta margen libre, cirugía de Mohs (sobre todo en zonas donde hay que preservar tejido) o radioterapia adyuvante si no es posible reintervenir.', ['BAD 2020', 'NCCN'], 'warn'));
           cir.push(it(cat === 'low' ? 'En un pT1 sin otros factores, el margen próximo eleva el tumor a riesgo alto; presentar en comité si se suma a otros factores.' : 'En un tumor de alto riesgo, el margen próximo lo clasifica como de muy alto riesgo: presentar en comité multidisciplinar antes de decidir.', ['BAD 2020'], 'warn'));
           if (mi.sides.indexOf('profundo') >= 0) cir.push(it('La mayor parte del tumor residual tras la exéresis se localiza en el margen profundo: en la reampliación incluir el plano profundo (tejido subcutáneo, gálea o fascia según la zona).', ['EADO']));
         } else if (mi.known) {
@@ -725,7 +786,7 @@ input[type="number"]::-webkit-outer-spin-button, input[type="number"]::-webkit-i
         if (mc !== null && mc < mrec && !mi.close) cir.push(it('Margen clínico empleado (' + String(mc).replace('.', ',') + ' mm) inferior al recomendado para este riesgo (' + (cat === 'low' ? '5 mm' : '6–10 mm') + '): debe considerarse una ampliación, teniendo en cuenta la retracción de la pieza. Si el tumor se operó como de bajo riesgo y la histología muestra factores de alto riesgo, puede discutirse la reampliación hasta margen histológico libre.', ['EADO'], 'warn'));
       }
       cir.push(it('Las técnicas destructivas (electrocoagulación y curetaje, crioterapia, terapia fotodinámica, láser) no deben emplearse en el CEC invasivo primario. Excepción: CEC pequeños o múltiples en zonas de bajo riesgo cuando la cirugía o la radioterapia no son posibles o tienen consecuencias inaceptables.', ['EADO GPP']));
-      cir.push(it('Curetaje y electrocoagulación: sólo en tumores de bajo riesgo bien delimitados, < 1 cm y en inmunocompetentes; evitar zonas pilosas y no usar si se alcanza la hipodermis, en recidivas ni en tumores de alto riesgo.', ['BAD 2020', 'NCCN 2025', 'AAD 2018']));
+      cir.push(it('Curetaje y electrocoagulación: sólo en tumores de bajo riesgo bien delimitados, < 1 cm y en inmunocompetentes; evitar zonas pilosas y no usar si se alcanza la hipodermis, en recidivas ni en tumores de alto riesgo.', ['BAD 2020', 'NCCN', 'AAD 2018']));
       if (S.mul) cir.push(it('Áreas con múltiples CEC invasivos agrupados (dorso de las manos, cuero cabelludo): puede ofrecerse la exéresis en bloque del campo con injerto cutáneo.', ['EADO']));
       if (edad !== null && edad >= 75) cir.push(it('Edad avanzada: la edad no empeora los resultados quirúrgicos y la cirugía del CEC de alto riesgo no debe ser subóptima en el anciano; la fragilidad y la comorbilidad sí deben pesar en la decisión.', ['EADO'], 'warn'));
     }
@@ -750,8 +811,8 @@ input[type="number"]::-webkit-outer-spin-button, input[type="number"]::-webkit-i
         rt.push(it('Con márgenes libres, la radioterapia adyuvante no debe ofrecerse como tratamiento estándar: no se ha demostrado un beneficio claro.', ['EADO C, 3']));
         if (bw.t === 'T2b' || bw.t === 'T3') rt.push(it('Con varios factores de riesgo (BWH ' + bw.t + ') y márgenes libres puede discutirse la radioterapia adyuvante: reduce la recidiva locorregional, sin efecto sobre la mortalidad específica.', ['EADO C, 4', 'BWH']));
         if (ctx.astro.length) rt.push(it('Variación entre guías: AIOM, que adopta los criterios de ASTRO, considera la radioterapia adyuvante en el CEC resecado de alto riesgo. En este caso concurre: ' + ctx.astro.join(', ') + '.', ['AIOM condicional a favor'], 'warn'));
-        if (ctx.marg.close || S.pni === 'cl' || S.pni === 'ml' || S.lvi || S.inm !== 'no') rt.push(it('Indicaciones habituales de radioterapia adyuvante: márgenes próximos o dudosos, invasión perineural extensa, invasión linfovascular e inmunodepresión. Dosis de 45–50 Gy o equivalente, con sobreimpresión de 10–15 Gy si es necesario, iniciada en las 6 semanas siguientes a la cirugía.', ['NCCN 2025', 'BAD 2020']));
-        if (S.pni === 'cl') rt.push(it('Invasión perineural extensa o de troncos nerviosos principales: incluir el trayecto proximal del nervio en el campo de irradiación; puede considerarse la resección del nervio afectado seguida de radioterapia, tras discusión en comité.', ['NCCN 2025', 'BAD 2020']));
+        if (ctx.marg.close || S.pni === 'cl' || S.pni === 'ml' || S.lvi || S.inm !== 'no') rt.push(it('Indicaciones habituales de radioterapia adyuvante: márgenes próximos o dudosos, invasión perineural extensa, invasión linfovascular e inmunodepresión. Dosis de 45–50 Gy o equivalente, con sobreimpresión de 10–15 Gy si es necesario, iniciada en las 6 semanas siguientes a la cirugía.', ['NCCN', 'BAD 2020']));
+        if (S.pni === 'cl') rt.push(it('Invasión perineural extensa o de troncos nerviosos principales: incluir el trayecto proximal del nervio en el campo de irradiación; puede considerarse la resección del nervio afectado seguida de radioterapia, tras discusión en comité.', ['NCCN', 'BAD 2020']));
       }
       if (S.pni === 'ms' && S.mar === 'r0') rt.push(it('CEC T1–T2 extirpado por completo con invasión perineural dérmica en nervios < 0,1 mm: no está indicada la radioterapia postoperatoria.', ['BAD 2020']));
       if (S.mul) rt.push(it('Contraindicaciones de la radioterapia postoperatoria: múltiples tumores sobre piel con daño actínico intenso (salvo esperanza de vida limitada) y CEC verrugoso.', ['SIDeMaST']));
@@ -769,6 +830,13 @@ input[type="number"]::-webkit-outer-spin-button, input[type="number"]::-webkit-i
       if (S.itm && S.cur !== 'no') rt.push(it('Metástasis satélite o en tránsito resecadas: la radioterapia adyuvante puede ser útil según series de casos.', ['EADO']));
       var rtPost = (S.mar === 'r1' || S.mar === 'r2' || ctx.marg.close || S.nst === 'pos' || (S.mar === 'r0' && (ctx.astro.length || bw.t === 'T2b' || bw.t === 'T3')));
       if (rtPost && S.cur !== 'no') rt.push(it('No se recomienda añadir quimioterapia concomitante a la radioterapia postoperatoria del CEC resecado de alto riesgo: el ensayo aleatorizado con carboplatino no mostró beneficio en control locorregional, supervivencia libre de enfermedad ni global.', ['AIOM condicional en contra']));
+    }
+    if (cat !== 'dist') {
+      if (S.mar === 'r1' || S.mar === 'r2') rt.push(it('Márgenes positivos (NCCN): reintervenir si es factible o radioterapia; si ni la cirugía ni la radioterapia son curativas, manejarlo como localmente avanzado.', ['NCCN 2A'], 'warn'));
+      if (S.mar === 'r0' && (S.pni === 'ml' || S.pni === 'cl')) rt.push(it('Márgenes negativos con invasión perineural extensa o de un nervio grueso o con nombre, u otros rasgos de mal pronóstico (NCCN): considerar radioterapia adyuvante. Puede considerarse en la invasión perineural clínica o radiológica, la histológica multifocal, el diámetro ≥ 6 cm, la recidiva, el alto riesgo de metástasis, los márgenes cercanos no reampliables y el desmoplásico o infiltrativo en inmunodeprimidos crónicos.', ['NCCN 2A'], 'warn'));
+      rt.push(it('Dosis adyuvantes (NCCN): 60–66 Gy a 2 Gy por fracción (60–66 Gy a 1,8 Gy en zonas de mala cicatrización, como la pierna), o hipofraccionada 2,5 Gy × 20, 3 Gy × 15–17 (45–51 Gy) o 6 Gy × 5 en días no consecutivos. Definitiva: 60 Gy en tumores pequeños de zonas estéticas y 66–70 Gy en tumores avanzados con hueso o cartílago; hipofraccionada 2,5 Gy × 20 (< 2 cm), 2,5–3 Gy × 20–22 (≥ 2 cm), 3 Gy × 17–18 (51–54 Gy), 4,4 Gy × 10 (4 por semana) o 6–7 Gy × 5 dos veces por semana en mayores.', ['NCCN 2A']));
+      if (S.nst === 'pos' || S.itm) rt.push(it('Enfermedad regional (NCCN, convencional): 66–70 Gy a ganglios macroscópicos o residuales, 60 Gy a la cuenca disecada con ganglios positivos, 50–66 Gy en la diseminación perineural (siguiendo el par craneal hasta la base del cráneo) y 1,8–2 Gy × 25–30 a cuencas de riesgo no disecadas. Metástasis satélite o en tránsito: 50–60 Gy en 5–6 semanas si están resecadas y 60–70 Gy en 6–7 semanas si no.', ['NCCN 2A']));
+      rt.push(it('Principios (NCCN): fraccionamiento prolongado en zonas mal vascularizadas o cartilaginosas; con invasión perineural extensa o de nervios con nombre, incluir el trayecto proximal del nervio, y en la diseminación perineural macroscópica derivar a un centro de alto volumen. Valorar la irradiación ganglionar electiva si hay varios rasgos de alto riesgo, sobre todo en inmunodeprimidos. Contraindicada en síndromes genéticos predisponentes y relativamente en conectivopatías; no reirradiar de rutina una recidiva en campo irradiado. Braquiterapia con moldes de superficie si la profundidad es ≤ 5 mm.', ['NCCN']));
     }
     secs.push({ t: 'Radioterapia', items: rt });
 
@@ -796,7 +864,7 @@ input[type="number"]::-webkit-outer-spin-button, input[type="number"]::-webkit-i
       if (isHN()) gg.push(it('Pronóstico: frente a 1–2 ganglios, la mortalidad específica aumenta con 3–4 ganglios (HR 1,58) y con 5 o más (HR 2,91).', ['EADO']));
     } else {
       gg.push(it('Biopsia selectiva del ganglio centinela: no recomendada como estándar en el CEC, al no haberse demostrado beneficio pronóstico.', ['EADO X, 3', 'AIOM condicional en contra']));
-      if (bw.t === 'T2b' || bw.t === 'T3') gg.push(it('Variación entre guías: en CEC de muy alto riesgo (Brigham and Women\'s Hospital, BWH, T2b o superior) la biopsia del ganglio centinela puede considerarse de forma opcional, sobre todo con mala diferenciación, espesor > 6 mm, tamaño > 20 mm, invasión linfovascular o perineural, o localización en cabeza y cuello; preferentemente en inmunocompetentes y tras discusión en comité. Positividad del centinela: ~7 % en BWH T2a, ~29 % en T2b y ~50 % en T3.', ['NCCN 2025', 'BAD 2020', 'BWH'], 'warn'));
+      if (bw.t === 'T2b' || bw.t === 'T3') gg.push(it('Variación entre guías: en CEC de muy alto riesgo (Brigham and Women\'s Hospital, BWH, T2b o superior) la biopsia del ganglio centinela puede considerarse de forma opcional, sobre todo con mala diferenciación, espesor > 6 mm, tamaño > 20 mm, invasión linfovascular o perineural, o localización en cabeza y cuello; preferentemente en inmunocompetentes y tras discusión en comité. Positividad del centinela: ~7 % en BWH T2a, ~29 % en T2b y ~50 % en T3.', ['NCCN', 'BAD 2020', 'BWH'], 'warn'));
       gg.push(it('Linfadenectomía electiva (profiláctica) en ganglios clínicamente negativos: no debe realizarse.', ['EADO X, 4', 'AIOM condicional en contra']));
     }
     if (S.itm) {
@@ -805,6 +873,13 @@ input[type="number"]::-webkit-outer-spin-button, input[type="number"]::-webkit-i
       gg.push(it('Su pronóstico es comparable al de la enfermedad ganglionar, aunque no figuran en el TNM de la 8.ª edición.', ['EADO'], 'warn'));
       if (inm) gg.push(it('En inmunodepresión iatrogénica, considerar reducir o retirar los inmunosupresores.', ['EADO']));
     }
+    if (S.nst === 'sosp' || S.nst === 'pos') gg.push(it('Adenopatía palpable o anormal en la imagen (NCCN): PAAF o biopsia con aguja gruesa guiada por ecografía en un centro con experiencia (la gruesa si la histología del primario es dudosa o se necesita más tejido); si es negativa y la sospecha persiste, repetirla o hacer biopsia escisional. Si es positiva: TC con contraste de la cuenca y TC de tórax, abdomen y pelvis o PET‑TC.', ['NCCN 2A']));
+    if (S.nst === 'pos' && S.cur !== 'no') {
+      gg.push(it('Enfermedad ganglionar operable (NCCN): exéresis del primario y linfadenectomía regional (preferente salvo que no sea candidato quirúrgico); valorar ensayo clínico. ' + (isHN() ? 'Cabeza y cuello: vaciamiento cervical ipsilateral (bilateral si hay ganglios bilaterales) y, si hay ganglios parotídeos, parotidectomía superficial con vaciamiento cervical según la clínica. Tras la cirugía: un ganglio ≤ 3 cm sin extensión extraganglionar, radioterapia u observación; dos o más ganglios o uno > 3 cm, radioterapia; cualquier extensión extraganglionar o resección incompleta, radioterapia y considerar tratamiento sistémico concomitante, tras consulta multidisciplinar.' : 'Tronco y extremidades: considerar radioterapia, sobre todo con varios ganglios o extensión extraganglionar.'), ['NCCN 2A'], 'warn'));
+      gg.push(it('Cemiplimab neoadyuvante (NCCN): 51 % de respuesta histológica completa en un estudio de 79 pacientes; puede considerarse tras consulta multidisciplinar si es resecable en el límite, irresecable o la cirugía tendría una morbilidad alta. Enfermedad irresecable, inoperable o resecada de forma incompleta: radioterapia ± tratamiento sistémico, o sistémico solo si la radioterapia curativa no es factible.', ['NCCN 2A']));
+    }
+    if (S.nst !== 'pos' && ctx.nccn.k === 'vhigh') gg.push(it('Ganglio centinela (NCCN, categoría 2B): comentarlo y considerarlo antes o durante la cirugía PDEMA en el muy alto riesgo recidivado o con varios factores de muy alto riesgo y cuenca ganglionar normal; su efecto sobre la supervivencia no está probado. Si se plantea, diferir la reconstrucción cuando no se pueda cerrar directamente con poco despegamiento. Si es positivo: estadificación radiológica de cuello, tórax, abdomen y pelvis y, sin metástasis, linfadenectomía de la cuenca (radioterapia si no es operable).', ['NCCN 2B'], 'warn'));
+    if (S.itm) gg.push(it('Metástasis satélite o en tránsito (NCCN): confirmar con biopsia, TC con contraste de la región y TC de tórax, abdomen y pelvis o PET‑TC; discusión multidisciplinar. Operables: tratamiento sistémico neoadyuvante seguido de resección, o resección de entrada valorando tratamiento adyuvante. Irresecables o resecadas de forma incompleta: tratamiento sistémico ± radioterapia; en la enfermedad limitada a una extremidad que progresa o no admite otras opciones, infusión o perfusión aislada de extremidad con melfalán en centros con experiencia.', ['NCCN 2A'], 'warn'));
     secs.push({ t: 'Manejo ganglionar y locorregional', items: gg });
 
     // --- Estudio de extensión ---
@@ -825,6 +900,8 @@ input[type="number"]::-webkit-outer-spin-button, input[type="number"]::-webkit-i
     if (S.rec) ex.push(it('El CEC recidivado se estadifica igual que el primario.', ['EADO']));
     if (cat === 'high' && (ctx.tA !== 'T1' || S.loc === 'hr')) ex.push(it('En tumores pT2 o superiores, o localizados en el labio, puede considerarse la ecografía ganglionar de alta resolución; no se recomienda la imagen ganglionar rutinaria sin signos de diseminación.', ['BAD 2020']));
     if (cat === 'reg' || cat === 'dist') ex.push(it('Ante sospecha de metástasis locorregionales o a distancia, completar la estadificación con TC toracoabdominopélvica o PET‑TC. La RM está indicada si se sospecha invasión perineural extensa o para definir la afectación ósea o neurológica.', ['BAD 2020']));
+    ex.push(it('Biopsia (NCCN): debe llegar a la dermis; si la biopsia incisional no permite una microestadificación adecuada, considerar una biopsia escisional con margen estrecho. Informe mínimo de las piezas de exéresis (también en Mohs): estado de los márgenes, grado de diferenciación, profundidad (Breslow en mm o plano más profundo), invasión perineural significativa (nervio ≥ 0,1 mm), invasión linfovascular e histología de alto riesgo (adenoescamosa, sarcomatoide). La invasión perineural extensa (> 5 nervios) es factor de recidiva; clasificarla como focal o multifocal. En la solicitud: localización, diámetro clínico, primario o recidivado, invasión nerviosa clínica o radiológica (con el nombre del nervio) e inmunodepresión o radioterapia previa.', ['NCCN']));
+    ex.push(it('Imagen (NCCN): sospecha de afectación de un nervio con nombre, RM con y sin contraste; ósea, TC con contraste; con invasión ósea puede considerarse RM cerebral para descartar afectación cortical subclínica. Muy alto riesgo con exploración ganglionar normal: considerar imagen de la cuenca ganglionar (RM, TC con contraste y/o ecografía). Recidiva local: basta la histología (RM para su extensión); metástasis ganglionares o a distancia: histología y/o imagen, incluida la PET‑TC con FDG.', ['NCCN 2A']));
     secs.push({ t: 'Estudio de extensión', items: ex });
 
     // --- Tratamiento sistémico ---
@@ -841,7 +918,9 @@ input[type="number"]::-webkit-outer-spin-button, input[type="number"]::-webkit-i
         tx.push(it('En España, cemiplimab está aprobado y financiado desde 2023 para el CEC avanzado no candidato a tratamiento curativo.', [], 'info'));
         tx.push(it('En EE. UU. están aprobados por la FDA cemiplimab, pembrolizumab y cosibelimab, con respuestas del 40–50 % y hasta un tercio de respuestas completas.', ['NCCN 2026', 'Post‑guía']));
       }
-      tx.push(it('Tras progresión o contraindicación de la inmunoterapia: carboplatino con paclitaxel; otras opciones son cetuximab, capecitabina, cisplatino, cisplatino con 5‑fluorouracilo o carboplatino, con respuestas limitadas. Quimiorradioterapia con cisplatino o cetuximab concomitantes en casos seleccionados.', ['NCCN 2025']));
+      tx.push(it('Tratamiento sistémico solo (NCCN 1.2027), si la radioterapia o la cirugía curativas no son factibles: preferentes cemiplimab, cosibelimab y pembrolizumab, o ensayo clínico; otra opción, nivolumab. Si no es candidato o progresa con inhibidores de punto de control: carboplatino con paclitaxel (± cetuximab) o inhibidores de EGFR (cetuximab); útiles en determinadas circunstancias capecitabina, cisplatino o cisplatino con 5‑fluorouracilo. Con radioterapia: preferente cisplatino o ensayo; otras, carboplatino, carboplatino con paclitaxel o cetuximab.', ['NCCN 2A']));
+      if (S.cur === 'no' && S.m === 'M0') tx.push(it('Localmente avanzado (NCCN): si la cirugía no es factible, radioterapia, discutiendo tratamiento sistémico concomitante en casos seleccionados; si tampoco la radioterapia curativa es factible, tratamiento sistémico solo. En el inmunodeprimido, considerar modificar o reducir la inmunosupresión.', ['NCCN 2A']));
+      if (S.m === 'M1') tx.push(it('Recidiva regional o metástasis a distancia (NCCN): tratamiento sistémico solo o combinado con radioterapia; radioterapia o cirugía paliativas de las zonas sintomáticas (SBRT en casos seleccionados) y, en circunstancias muy seleccionadas, resección de metástasis limitadas.', ['NCCN 2A']));
       tx.push(it('Electroquimioterapia con bleomicina: opción local cuando han fallado o no son posibles la cirugía y la radioterapia, o con intención paliativa; mejor respuesta en tumores < 3 cm no ulcerados.', ['EADO']));
       tx.push(it('Abordaje multidisciplinar obligatorio, considerando toxicidad, edad, fragilidad y comorbilidad. Los pacientes con ECOG ≥ 2 no se incluyeron en los ensayos pivotales; los datos de vida real en frágiles son alentadores.', ['EADO']));
       tx.push(it('Integración precoz de los cuidados paliativos junto al tratamiento oncológico (recomendación fuerte si se dispone de equipo de paliativos; débil si no).', ['AIOM fuerte a favor']));
@@ -856,7 +935,7 @@ input[type="number"]::-webkit-outer-spin-button, input[type="number"]::-webkit-i
     if (!advanced && ctx.adjCand) {
       tx.push(it('Cemiplimab adyuvante tras cirugía y radioterapia postoperatoria en el CEC de alto riesgo de recidiva (C‑POST, n = 415): supervivencia libre de enfermedad a 24 meses del 87,1 % frente al 64,1 % con placebo (HR 0,32; IC 95 % 0,20–0,51), con menos recidivas locorregionales (HR 0,20) y a distancia (HR 0,35). Toxicidad grado ≥ 3: 23,9 % frente a 14,2 %.', ['Post‑guía · C‑POST, NEJM 2025'], 'warn'));
       tx.push(it('Aprobado por la FDA (octubre de 2025) y por la Comisión Europea (noviembre de 2025) para adultos con CEC de alto riesgo de recidiva tras cirugía y radioterapia: 350 mg cada 3 semanas durante 12 semanas y después 700 mg cada 6 semanas (o 350 mg cada 3 semanas), hasta 48 semanas. Comprobar que el paciente cumple los criterios de alto riesgo del ensayo y la financiación local. Las guías EADO 2023 y AIOM 2024 son anteriores y no lo recogen.', ['Post‑guía · EMA 2025'], 'warn'));
-      tx.push(it('NCCN 2.2026 incorporó el cemiplimab adyuvante tras la radioterapia postoperatoria como recomendación de categoría 1 para el CEC con rasgos de muy alto riesgo, ganglionares y no ganglionares. La supervivencia global de C‑POST aún es inmadura (HR 0,78).', ['NCCN 2026', 'Post‑guía'], 'warn'));
+      tx.push(it('NCCN 1.2027: tras exéresis con márgenes negativos y radioterapia adyuvante, cemiplimab es de categoría 1 preferente en el CEC con rasgos de riesgo extremadamente alto (los de C‑POST): ganglio con extensión extracapsular y el mayor ≥ 20 mm, ≥ 3 ganglios afectos, metástasis en tránsito, T4 con invasión ósea, invasión perineural clínica o radiológica, o recidivas muy seleccionadas con rasgos concretos. En el resto de la enfermedad regional resecada, la adyuvancia sistémica sólo en ensayo. La supervivencia global de C‑POST aún es inmadura (HR 0,78).' + (ctx.xf.length ? ' En este caso: ' + ctx.xf.join('; ') + '.' : ' En este caso no constan esos rasgos.'), ['NCCN 1', 'Post‑guía'], 'warn'));
       tx.push(it('Pembrolizumab adyuvante tras cirugía y radioterapia (KEYNOTE‑630): ensayo interrumpido por futilidad en 2024; no mejoró significativamente la supervivencia libre de recidiva y la supervivencia global a 24 meses no lo favoreció (87,3 % frente a 90,7 %). No debe usarse en adyuvancia.', ['Post‑guía · KEYNOTE‑630, ASCO 2025'], 'warn'));
     }
     secs.push({ t: 'Tratamiento sistémico', items: tx });
@@ -879,6 +958,8 @@ input[type="number"]::-webkit-outer-spin-button, input[type="number"]::-webkit-i
       if (S.inm === 'vih' && advanced) im.push(it('Se ha comunicado el uso de anti‑PD‑1 en CEC metastásico en personas con VIH.', ['EADO']));
       im.push(it('Seguimiento clínico e instrumental en el inmunodeprimido con CEC, personalizado según el tipo de inmunodepresión y las características del tumor.', ['AIOM condicional a favor']));
       im.push(it('Fotoprotección con alta protección UVA durante todo el año (fotosensibilidad UVA con azatioprina) y control de la vitamina D.', ['EADO']));
+      im.push(it('Pacientes con riesgo de múltiples CEC primarios (NCCN): trasplantados, otras inmunodepresiones (linfoma, LLC, fármacos, VIH) y genodermatosis. Umbral bajo para biopsiar, diagnóstico y tratamiento urgentes, y estadificación ganglionar si el riesgo es significativo. En tumores clínicamente de bajo riesgo, las técnicas destructivas (curetaje y electrocoagulación, crioterapia) permiten tratar varias lesiones en una visita (revisar la histología); el CEC in situ puede tratarse con tópicos; la radioterapia adyuvante se usa con más frecuencia. Las lesiones satélite y en tránsito deben tratarse de forma agresiva. Ante cánceres cutáneos graves o múltiples y rápidos, reducir la inmunosupresión y/o pasar a inhibidores de mTOR, de acuerdo con el equipo de trasplante.', ['NCCN 2A']));
+      if (advanced) im.push(it('Inmunoterapia en trasplantados (NCCN): sopesar el beneficio frente al riesgo importante de rechazo; considerar reducir los inmunosupresores y sustituir anticalcineurínicos o antimetabolitos por inhibidores de mTOR. Cemiplimab es útil en determinadas circunstancias en el trasplante de órgano sólido; derivar a un centro con gran volumen de trasplantados. Los pacientes con LLC u otras inmunodeficiencias se excluyeron de los ensayos de cemiplimab.', ['NCCN 2A'], 'warn'));
       secs.push({ t: 'Paciente inmunodeprimido', items: im });
     }
 
@@ -898,6 +979,12 @@ input[type="number"]::-webkit-outer-spin-button, input[type="number"]::-webkit-i
     else if (cat === 'low' || cat === 'high') fu.push(it('British Association of Dermatologists (BAD): en el alto y muy alto riesgo, revisión cada 4 meses el primer año y cada 6 meses el segundo, sobre todo si hay varios factores de riesgo. Avisar del riesgo de un nuevo CEC (80 % en 5 años).', ['BAD 2020']));
     if (S.mul) fu.push(it('Múltiples CEC: mayor riesgo de recidiva local y de metástasis ganglionar; programas de vigilancia estrecha, sobre todo si hay inmunodepresión.', ['EADO']));
     fu.push(it('Antecedentes familiares de cáncer de útero o colon: valorar consejo genético y estudio de genes reparadores (síndrome de Lynch o Muir‑Torre).', ['EADO']));
+    var nkf = ctx.nccn.k;
+    var nsched = (S.nst === 'pos' || S.itm) ? 'enfermedad regional o en tránsito: cada 2–3 meses el primer año, cada 2–4 meses el segundo, cada 4–6 meses los 3 siguientes y después cada 6–12 meses de por vida, con autoexploración cutánea y ganglionar' :
+      nkf === 'vhigh' ? 'muy alto riesgo: cada 3–6 meses 2 años, cada 6 meses los 3 siguientes y después cada 6–12 meses de por vida' :
+      nkf === 'high' ? 'alto riesgo: cada 3–6 meses 2 años, cada 6–12 meses los 3 siguientes y después anual de por vida' :
+      'bajo riesgo: cada 3–12 meses 2 años, cada 6–12 meses los 3 siguientes y después anual de por vida';
+    fu.push(it('NCCN, ' + nsched + '. Exploración de toda la piel y de los ganglios regionales; ajustar la frecuencia al riesgo. Imagen si la exploración no basta o hay riesgo apreciable de recidiva local o ganglionar subclínica, idealmente según el comité' + (nkf === 'vhigh' ? '; en el muy alto riesgo puede hacerse una imagen basal postratamiento como referencia' : '') + '. Seguimiento por dermatología muy recomendado si hay trasplante (pasado o inminente), un melanoma en 5 años o 4 o más cánceres cutáneos no melanoma en 5 años.', ['NCCN 2A']));
     secs.push({ t: 'Seguimiento', items: fu });
 
     // --- Prevención ---
@@ -906,6 +993,9 @@ input[type="number"]::-webkit-outer-spin-button, input[type="number"]::-webkit-i
     if (S.mul && !inm) pv.push(it('Inmunocompetente con antecedentes de múltiples CEC: puede ofrecerse nicotinamida 500 mg cada 12 horas (30 % menos CEC nuevos a 12 meses; el efecto se limita al periodo de tratamiento).', ['EADO C, 3']));
     pv.push(it('La quimioprevención puede considerarse en pacientes con alto riesgo de nuevos CEC; los retinoides orales son los que muestran un beneficio más consistente.', ['AIOM condicional a favor']));
     pv.push(it('Hidroclorotiazida: riesgo de CEC dependiente de la dosis (aviso de la EMA, 2018). Reconsiderarla en pacientes con antecedentes de carcinoma queratinocítico.', ['EADO']));
+    pv.push(it('Cancerización de campo (NCCN): tratar las queratosis actínicas desde su aparición y biopsiar las atípicas o que no responden; el CEC in situ dentro del campo se trata con tópicos, no con cirugía. Retirar o cambiar, si hay alternativa, los fármacos que favorecen el CEC (azatioprina, tacrolimus, ciclosporina, micofenolato, ruxolitinib, tiazidas, voriconazol). Fotoprotector diario y ropa protectora.', ['NCCN 2A']));
+    pv.push(it('Opciones para el campo (NCCN): quimioprevención con nicotinamida (preferente; su efecto desaparece al suspenderla); acitretina, isotretinoína o capecitabina (ésta en enfermedad refractoria tras retinoides) en determinadas circunstancias. Tópicos: calcipotriol con 5‑fluorouracilo (preferente; la profilaxis más duradera); 5‑fluorouracilo, ALA con terapia fotodinámica, imiquimod y tirbanibulina como otras opciones; porfímero con TFD y diclofenaco (2B) en determinadas circunstancias. Destructivos: vermilionectomía ablativa (queilitis actínica extensa), resurfacing, peelings con ácido tricloroacético, crioterapia y curetaje.', ['NCCN 2A']));
+    if (S.inm === 'tos') pv.push(it('Trasplantados (NCCN): pasar de anticalcineurínicos a pautas con inhibidores de mTOR puede reducir nuevos CEC, coordinándolo con el equipo de trasplante; los retinoides orales son eficaces pero teratógenos y su efecto cesa al suspenderlos.', ['NCCN']));
     secs.push({ t: 'Prevención', items: pv });
 
     if (guia !== 'todas') {
@@ -928,7 +1018,7 @@ input[type="number"]::-webkit-outer-spin-button, input[type="number"]::-webkit-i
     ['uicc', 'UICC‑8', 'Union for International Cancer Control, 8.ª ed.', 'UICC'],
     ['bwh', 'BWH', 'Brigham and Women\'s Hospital', 'BWH'],
     ['bad', 'BAD 2020', 'British Association of Dermatologists', 'BAD'],
-    ['nccn', 'NCCN', 'National Comprehensive Cancer Network', 'NCCN'],
+    ['nccn', 'NCCN 1.2027', 'National Comprehensive Cancer Network, versión 1.2027 (octubre 2026)', 'NCCN'],
     ['aad', 'AAD 2018', 'American Academy of Dermatology', 'AAD'],
     ['s3', 'S3 alemana', 'Guía S3 alemana de queratosis actínica y CEC', 'S3'],
     ['sid', 'SIDeMaST', 'Società Italiana di Dermatologia', 'SIDeMaST'],
@@ -941,8 +1031,9 @@ input[type="number"]::-webkit-outer-spin-button, input[type="number"]::-webkit-i
     if (cat === 'dist') return { v: 'Comité', d: 'Enfermedad a distancia: la cirugía del primario sólo con intención paliativa o de control local.', c: 'na' };
     if (S.cur === 'no') return { v: 'No aplicable', d: 'No candidato a cirugía curativa.', c: 'na' };
     var extra = (S.mar === 'r1' || S.mar === 'r2') ? ' Márgenes afectos: reampliar si es operable.' : '';
-    if (cat === 'low') return { v: '5 mm', d: 'CEC de bajo riesgo: margen clínico de 5 mm (EADO); AIOM, ≥ 4 mm.' + extra, c: 'ok' };
-    return { v: '6–10 mm o CMC', d: 'Factores de alto riesgo: margen clínico de 6–10 mm o cirugía micrográficamente controlada (EADO); AIOM, ≥ 6 mm.' + extra, c: 'ok' };
+    var nk = nccnRisk().k;
+    if (cat === 'low') return { v: '5 mm', d: 'CEC de bajo riesgo: margen clínico de 5 mm (EADO); AIOM, ≥ 4 mm; NCCN, 4–6 mm' + (nk === 'high' || nk === 'vhigh' ? ', aunque para la NCCN es de riesgo ' + (nk === 'vhigh' ? 'muy alto' : 'alto') + ' y prefiere Mohs o PDEMA' : '') + '.' + extra, c: 'ok' };
+    return { v: '6–10 mm o CMC', d: 'Factores de alto riesgo: margen clínico de 6–10 mm o cirugía micrográficamente controlada (EADO); AIOM, ≥ 6 mm; NCCN, Mohs o PDEMA (preferente en el muy alto riesgo) o márgenes más amplios decididos caso a caso.' + extra, c: 'ok' };
   }
 
   // Actitud tras la exéresis: necesidad de ampliación según el margen y pasos adicionales
@@ -986,7 +1077,7 @@ input[type="number"]::-webkit-outer-spin-button, input[type="number"]::-webkit-i
     if (c.cat.pending) return { v: '—', d: 'Introduzca el diámetro clínico y los datos histológicos.', c: 'na' };
     if (t === 'T2b' || t === 'T3') {
       if (S.inm !== 'no') return { v: 'No recomendada', d: 'BWH ' + t + ' en inmunodeprimido: EADO y AIOM no la recomiendan y el posible beneficio descrito en muy alto riesgo no se extiende a los inmunodeprimidos.', c: 'no' };
-      return { v: 'A discutir en comité', d: 'BWH ' + t + ' (positividad del centinela ~' + (t === 'T3' ? '50' : '29') + ' %): NCCN y BAD la consideran opcional en el muy alto riesgo en inmunocompetentes; EADO y AIOM no la recomiendan como estándar.', c: 'maybe' };
+      return { v: 'A discutir en comité', d: 'BWH ' + t + ' (positividad del centinela ~' + (t === 'T3' ? '50' : '29') + ' %): NCCN (2B, en el muy alto riesgo recidivado o con varios factores) y BAD la consideran opcional; EADO y AIOM no la recomiendan como estándar.', c: 'maybe' };
     }
     return { v: 'No indicada', d: 'No recomendada como estándar en el CEC (EADO X, 3; AIOM condicional en contra).' + (t === 'T2a' ? ' Positividad en BWH T2a ~7 %.' : ''), c: 'no' };
   }
@@ -1025,9 +1116,9 @@ input[type="number"]::-webkit-outer-spin-button, input[type="number"]::-webkit-i
     var adv = cat === 'dist' || cat === 'lac' || (cat === 'reg' && S.cur === 'no');
     if (adv) {
       if (S.ci) return { v: 'Cetuximab ± RT', d: 'Contraindicación o fracaso del anti‑PD‑1: cetuximab (mejor con RT o quimioterapia) o ensayo clínico.', c: 'maybe' };
-      return { v: 'Anti‑PD‑1', d: 'Cemiplimab en primera línea, único aprobado por la EMA en el CEC avanzado no candidato a tratamiento curativo.', c: 'ok' };
+      return { v: 'Anti‑PD‑1', d: 'Cemiplimab en primera línea, único aprobado por la EMA en el CEC avanzado no candidato a tratamiento curativo. NCCN 1.2027: preferentes cemiplimab, cosibelimab y pembrolizumab.', c: 'ok' };
     }
-    if (adjCand) return { v: 'Valorar cemiplimab adyuvante', d: 'Tras cirugía y RT postoperatoria en alto riesgo de recidiva: C‑POST positivo y aprobado por la EMA en 2025. Posterior a EADO 2023 y AIOM 2024, que no recomendaban adyuvancia sistémica.', c: 'maybe' };
+    if (adjCand) { var xf = extremeFeatures(); return { v: 'Valorar cemiplimab adyuvante', d: 'Tras cirugía y RT postoperatoria en alto riesgo de recidiva: C‑POST positivo, aprobado por la EMA en 2025 y categoría 1 preferente en la NCCN 1.2027 si hay rasgos de riesgo extremadamente alto' + (xf.length ? ' (aquí: ' + xf.join('; ') + ')' : ' (no constan en este caso)') + '. Posterior a EADO 2023 y AIOM 2024, que no recomendaban adyuvancia sistémica.', c: xf.length ? 'ok' : 'maybe' }; }
     if (S.nst === 'pos' || S.itm) return { v: 'No estándar', d: 'Sin adyuvancia sistémica establecida tras la resección; neoadyuvancia en investigación.', c: 'no' };
     return { v: 'No indicado', d: 'Manejo local y seguimiento.', c: 'no' };
   }
@@ -1059,7 +1150,7 @@ input[type="number"]::-webkit-outer-spin-button, input[type="number"]::-webkit-i
     // Candidato a valorar adyuvancia: M0, tratable con intención curativa y con indicación de RT postoperatoria
     var adjCand = S.m === 'M0' && S.cur === 'si' && (S.nst === 'pos' || S.itm || S.mar === 'r1' || S.mar === 'r2' ||
       (S.mar === 'r0' && as.length > 0));
-    return { marg: margInfo(), sys: sys, T: T, N: N, M: M, st: st, bwh: bw, ef: ef, cat: cat, astro: as, adjCand: adjCand, tA: tA, bad: badRisk() };
+    return { marg: margInfo(), sys: sys, T: T, N: N, M: M, st: st, bwh: bw, ef: ef, cat: cat, astro: as, adjCand: adjCand, tA: tA, bad: badRisk(), nccn: nccnRisk(), xf: extremeFeatures() };
   }
 
   function render() {
@@ -1122,6 +1213,7 @@ input[type="number"]::-webkit-outer-spin-button, input[type="number"]::-webkit-i
       '<div><div class="sg-lab">BWH<div class="sg-full">Brigham and Women\'s Hospital</div></div><div class="sg-val">' + esc(bwVal) + '</div></div>' +
       '<div><div class="sg-lab">Categoría EADO<div class="sg-full">European Association of Dermato‑Oncology</div></div><div class="sg-val sm">' + esc(c.cat.v) + '</div></div>' +
       '<div><div class="sg-lab">Riesgo BAD<div class="sg-full">British Association of Dermatologists</div></div><div class="sg-val sm">' + esc(c.cat.pending ? '—' : c.bad.v) + '</div></div>' +
+      '<div><div class="sg-lab">Riesgo NCCN<div class="sg-full">NCCN 1.2027</div></div><div class="sg-val sm">' + esc(c.nccn.v) + '</div></div>' +
       '</div><div class="stage-note">' + notes.map(function (n) { return '<p>' + esc(n) + '</p>'; }).join('') + '</div></div>';
 
     var nf = c.ef.length;
@@ -1154,7 +1246,8 @@ input[type="number"]::-webkit-outer-spin-button, input[type="number"]::-webkit-i
       '<p>Herramienta de apoyo a la decisión: no sustituye el juicio clínico ni la valoración del comité multidisciplinar de tumores. Sólo para CEC invasivo (excluye la enfermedad de Bowen y los CEC mucosos).</p>' +
       '<p>Grados: EADO, grado de recomendación (A fuerte, B recomendación, C débil, X no recomendado, GPP buena práctica clínica) seguido del nivel de evidencia de Oxford (1–5). AIOM, fuerza de la recomendación según GRADE.</p>' +
       '<p>Fuentes: Stratigos AJ, et al. European consensus-based interdisciplinary guideline for invasive cutaneous squamous cell carcinoma. Part 1: Diagnostics and prevention, y Part 2: Treatment — Update 2023 (EADO/EDF/ESTRO/UEMS/EADV/EORTC). Eur J Cancer 2023;193:113251 y 113252. Queirolo P, et al. Guidelines for the diagnosis and treatment of cutaneous squamous cell carcinoma: a GRADE approach (AIOM). ESMO Open 2024;9(5):103005. AJCC Cancer Staging Manual, 8.ª ed.; UICC TNM, 8.ª ed.</p>' +
-      '<p>Otras guías: Keohane SG, et al. British Association of Dermatologists (BAD) guidelines for cutaneous squamous cell carcinoma 2020. Br J Dermatol 2021;184:401–414. National Comprehensive Cancer Network (NCCN) Guidelines, Squamous Cell Skin Cancer, versiones 2.2025 y 2.2026. Kim JYS, et al. American Academy of Dermatology (AAD) guidelines of care for cutaneous squamous cell carcinoma. J Am Acad Dermatol 2018;78:560–578. Leiter U, et al. German S3 guideline actinic keratosis and cutaneous squamous cell carcinoma, update 2023. EJC Skin Cancer 2023;1:100004. Peris K, et al. Cutaneous squamous cell carcinoma: Italian guidelines by SIDeMaST (Società Italiana di Dermatologia). Las recomendaciones de estas guías se han recogido de la revisión comparativa de Paradela de la Morena S, et al. Actas Dermosifiliogr 2026;117:104611 y 104612.</p>' +
+      '<p>Otras guías: Keohane SG, et al. British Association of Dermatologists (BAD) guidelines for cutaneous squamous cell carcinoma 2020. Br J Dermatol 2021;184:401–414. Kim JYS, et al. American Academy of Dermatology (AAD) guidelines of care for cutaneous squamous cell carcinoma. J Am Acad Dermatol 2018;78:560–578. Leiter U, et al. German S3 guideline actinic keratosis and cutaneous squamous cell carcinoma, update 2023. EJC Skin Cancer 2023;1:100004. Peris K, et al. Cutaneous squamous cell carcinoma: Italian guidelines by SIDeMaST (Società Italiana di Dermatologia). Las recomendaciones de estas guías se han recogido de la revisión comparativa de Paradela de la Morena S, et al. Actas Dermosifiliogr 2026;117:104611 y 104612.</p>' +
+      '<p>NCCN Clinical Practice Guidelines in Oncology: Squamous Cell Skin Cancer, versión 1.2027 (8 de octubre de 2026). Se recogen sus recomendaciones de práctica clínica, redactadas de nuevo y sin reproducir sus algoritmos ni figuras; categoría 2A salvo que se indique otra (1: evidencia de alto nivel con consenso uniforme; 2B: consenso). Consulte el documento original en nccn.org.</p>' +
       '<p>Evidencia posterior a las guías (etiqueta «Post‑guía»): Ma VT. Therapeutic strategies for nonmelanoma skin cancers (NCCN 2026 Annual Conference). J Natl Compr Canc Netw 2026;24(Suppl):24–26. Rischin D, et al. Adjuvant cemiplimab or placebo in high-risk cutaneous squamous-cell carcinoma (C‑POST). N Engl J Med 2025. Aprobación de la EMA para la adyuvancia, noviembre de 2025. KEYNOTE‑630, adyuvancia con pembrolizumab: J Clin Oncol 2025;43(16 suppl):6000.</p>' +
       '</div>';
 
