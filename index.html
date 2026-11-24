@@ -138,6 +138,20 @@ input[type="number"]::-webkit-outer-spin-button, input[type="number"]::-webkit-i
 .vlist { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 5px; }
 .vlist span { font: 500 11px/1.2 'IBM Plex Sans', sans-serif; padding: 4px 8px; border-radius: 3px; background: oklch(0.95 0.025 35); color: oklch(0.44 0.11 32); border: 1px solid oklch(0.87 0.05 35); }
 
+.sum { border-left: 4px solid var(--acc); }
+.sum-head { font: 600 15px/1.4 'IBM Plex Sans', sans-serif; color: var(--ink); margin-bottom: 14px; text-wrap: pretty; }
+.sum-rows { display: grid; grid-template-columns: max-content 1fr; gap: 9px 16px; align-items: baseline; }
+.sum-k { font: 600 10.5px/1.3 'JetBrains Mono', monospace; letter-spacing: .08em; text-transform: uppercase; color: var(--label); }
+.sum-v { font: 400 14px/1.45 'IBM Plex Sans', sans-serif; color: var(--ink); text-wrap: pretty; }
+.sum-v.warn { color: var(--warn); font-weight: 600; }
+.sum-v.alert { color: var(--alert); font-weight: 600; }
+.sum-v.muted { color: var(--muted); }
+.sum-note { font: 400 12px/1.5 'IBM Plex Sans', sans-serif; color: var(--label); margin-top: 14px; border-top: 1px solid var(--line); padding-top: 10px; }
+@media (max-width: 720px) {
+  .sum-rows { grid-template-columns: 1fr; gap: 2px; }
+  .sum-v { margin-bottom: 8px; }
+}
+
 .sec-t { font: 600 11px/1.3 'JetBrains Mono', monospace; letter-spacing: .08em; text-transform: uppercase; color: var(--acc); margin-bottom: 15px; }
 .items { display: flex; flex-direction: column; gap: 14px; }
 .item { display: flex; gap: 11px; align-items: flex-start; }
@@ -1067,6 +1081,87 @@ input[type="number"]::-webkit-outer-spin-button, input[type="number"]::-webkit-i
     return r;
   }
 
+  // Resumen escueto de la actitud a seguir con los datos introducidos
+  function vResumen(c) {
+    var cat = c.cat.k, rows = [];
+    var inm = S.inm !== 'no';
+    var adv = cat === 'dist' || cat === 'lac' || (cat === 'reg' && S.cur === 'no');
+    var head = 'CEC ' + c.cat.v.toLowerCase() + ' (EADO)' +
+      (c.nccn.k !== 'nd' ? ' · riesgo NCCN ' + c.nccn.v.toLowerCase() : '') +
+      ' · riesgo BAD ' + c.bad.v.toLowerCase() +
+      (c.st ? ' · estadio ' + c.st : '') + (c.bwh.t !== '—' ? ' · BWH ' + c.bwh.t : '');
+
+    // Comité
+    var why = [];
+    if (cat === 'dist' || cat === 'lac' || cat === 'reg') why.push(c.cat.v.toLowerCase());
+    if (c.bad.k === 'vhigh') why.push('riesgo BAD muy alto');
+    else if (c.bad.k === 'high' && c.bad.mdt) why.push('riesgo BAD alto con margen afecto o próximo, o varios factores');
+    if (c.nccn.k === 'vhigh' && !why.length) why.push('riesgo NCCN muy alto');
+    if (S.inm === 'tos' && cat !== 'low') why.push('trasplantado');
+    rows.push(['Comité', why.length ? 'Presentar en comité multidisciplinar (' + why.join('; ') + ').' : 'No precisa, salvo márgenes afectos o próximos.', why.length ? 'warn' : '']);
+
+    // Tumor primario
+    var low = cat === 'low', cir, ct = '';
+    if (cat === 'dist') cir = 'Sólo con intención paliativa o de control local.';
+    else if (S.cur === 'no') { cir = 'No candidato a cirugía curativa: radioterapia definitiva si es factible; si no, tratamiento sistémico.'; ct = 'warn'; }
+    else if (S.mar === 'pend') cir = 'Exéresis con margen clínico de ' + (low ? '5 mm (4–6 mm).' : '6–10 mm o cirugía de Mohs / micrográfica' + (isHN() || S.acr || S.loc === 'ex' ? ' (preferente por la localización).' : '.')) + ' No reconstruir con colgajo hasta confirmar R0.';
+    else if (S.mar === 'r1' || S.mar === 'r2') { cir = 'Margen afecto: reampliar o Mohs; si no es posible, radioterapia postoperatoria.'; ct = 'alert'; }
+    else {
+      var a = vActitud(c);
+      cir = a ? a.v + '. ' + a.d : '';
+      ct = a && a.c === 'maybe' ? 'warn' : '';
+    }
+    rows.push(['Tumor primario', cir, ct]);
+
+    // Imagen
+    var im = vImaging(cat);
+    rows.push(['Imagen', im.v + '.' + (im.c === 'no' ? ' Exploración física y palpación ganglionar.' : ''), '']);
+
+    // Ganglios
+    var gg, gt = '';
+    if (S.nst === 'pos') {
+      gg = S.cur === 'no' || cat === 'dist' ? 'Metástasis ganglionar: tratamiento según comité (radioterapia y/o sistémico).' :
+        'Linfadenectomía terapéutica de la cuenca' + (S.par && isHN() ? ' con parotidectomía superficial.' : '.');
+      gt = 'warn';
+    } else if (S.nst === 'sosp') { gg = 'Confirmar la adenopatía con PAAF o biopsia con aguja gruesa ecoguiada.'; gt = 'warn'; }
+    else {
+      var sl = vSLNB(c);
+      gg = sl.c === 'maybe' ? 'Ganglio centinela opcional: discutir en comité (BWH ' + c.bwh.t + ').' : 'Ni ganglio centinela ni linfadenectomía electiva.';
+      gt = sl.c === 'maybe' ? 'warn' : '';
+    }
+    if (S.itm) gg += ' Metástasis en tránsito: resecar si es posible.';
+    rows.push(['Ganglios', gg, gt]);
+
+    // Radioterapia
+    var rt = vRT(cat, c), rtt;
+    if (rt.v === '—') rtt = 'Según el estado de los márgenes tras la exéresis.';
+    else if (rt.v === 'No indicada') rtt = 'No indicada.';
+    else rtt = rt.v + '. ' + rt.d.split('. ')[0].replace(/\.$/, '') + '.';
+    rows.push(['Radioterapia', rtt, rt.c === 'ok' && rt.v !== 'Paliativa' ? 'warn' : rt.c === 'maybe' ? 'warn' : '']);
+
+    // Tratamiento sistémico
+    var sy;
+    if (adv) sy = S.ci ? 'Cetuximab (mejor con radioterapia) o ensayo clínico.' : 'Anti‑PD‑1 en primera línea (cemiplimab).';
+    else if (c.adjCand) sy = 'Valorar cemiplimab adyuvante tras cirugía y radioterapia' + (c.xf.length ? ' (rasgos de C‑POST presentes).' : ' (no constan los rasgos de C‑POST).');
+    else sy = 'No indicado.';
+    rows.push(['Sistémico', sy, adv || (c.adjCand && c.xf.length) ? 'warn' : '']);
+
+    // Inmunodepresión
+    if (inm) rows.push(['Inmunodepresión', S.inm === 'tos' ? 'Manejar como alto riesgo. Con el equipo de trasplante: retinoides orales y paso a inhibidores de mTOR.' : 'Manejar como alto riesgo; umbral bajo para biopsiar.', 'warn']);
+
+    // Seguimiento
+    var fu = low ? 'Revisión clínica anual los años 1 y 2.' :
+      cat === 'high' ? 'Cada 3–6 meses los años 1 y 2 (con ecografía ganglionar), después anual hasta el 5.º año.' :
+      'Cada 3 meses los años 1 a 5, con ecografía e imagen periódica.';
+    if (S.inm === 'tos' || S.inm === 'hem') fu += ' De por vida cada 3–6 meses.';
+    rows.push(['Seguimiento', fu, '']);
+
+    // Prevención
+    rows.push(['Prevención', 'Fotoprotección y autoexploración' + (S.mul && !inm ? '; valorar nicotinamida 500 mg cada 12 h.' : '.'), 'muted']);
+
+    return { head: head, rows: rows };
+  }
+
   // Biopsia selectiva del ganglio centinela (BSGC)
   function vSLNB(c) {
     var cat = c.cat.k, t = c.bwh.t;
@@ -1216,8 +1311,18 @@ input[type="number"]::-webkit-outer-spin-button, input[type="number"]::-webkit-i
       '<div><div class="sg-lab">Riesgo NCCN<div class="sg-full">NCCN 1.2027</div></div><div class="sg-val sm">' + esc(c.nccn.v) + '</div></div>' +
       '</div><div class="stage-note">' + notes.map(function (n) { return '<p>' + esc(n) + '</p>'; }).join('') + '</div></div>';
 
+    if (c.cat.pending) {
+      html += '<div class="card sum"><div class="sec-t">Resumen · actitud a seguir</div><div class="vdet">Introduzca al menos el diámetro clínico máximo y los datos histológicos para generar el resumen.</div></div>';
+    } else {
+      var rs = vResumen(c);
+      html += '<div class="card sum"><div class="sec-t">Resumen · actitud a seguir</div>' +
+        '<div class="sum-head">' + esc(rs.head) + '</div><div class="sum-rows">' +
+        rs.rows.map(function (r) { return '<div class="sum-k">' + esc(r[0]) + '</div><div class="sum-v' + (r[2] ? ' ' + r[2] : '') + '">' + esc(r[1]) + '</div>'; }).join('') +
+        '</div><div class="sum-note">Síntesis de las recomendaciones detalladas más abajo. No sustituye la valoración del comité multidisciplinar.</div></div>';
+    }
+
     var nf = c.ef.length;
-    var fv = { v: nf + ' de 9', c: nf ? 'maybe' : 'no',
+    var fv ={ v: nf + ' de 9', c: nf ? 'maybe' : 'no',
       d: nf ? 'Factores presentes de la lista EADO de alto riesgo de recidiva local o metástasis ganglionar:' : 'Ninguno de los nueve factores EADO de alto riesgo.' };
     var flist = nf ? '<div class="vlist">' + c.ef.map(function (f) { return '<span>' + esc(f) + '</span>'; }).join('') + '</div>' : '';
     var pend = { v: '—', d: 'Introduzca al menos el diámetro clínico máximo para clasificar el riesgo.', c: 'na' };
