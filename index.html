@@ -135,6 +135,15 @@ input[type="number"]::-webkit-outer-spin-button, input[type="number"]::-webkit-i
 .vdet { font: 400 13px/1.5 'IBM Plex Sans', sans-serif; color: oklch(0.44 0.012 70); text-wrap: pretty; }
 .vpill { font: 600 18px/1.2 'IBM Plex Sans', sans-serif; padding: 10px 16px; border-radius: 4px; color: #fff; text-align: center; max-width: 100%; }
 .steps { margin: 10px 0 0 16px; display: flex; flex-direction: column; gap: 4px; font: 400 13px/1.45 'IBM Plex Sans', sans-serif; color: var(--ink-2); }
+.chk { list-style: none; margin: 10px 0 0; padding: 0; display: flex; flex-direction: column; gap: 5px; font: 400 13px/1.45 'IBM Plex Sans', sans-serif; color: var(--ink-2); }
+.chk li { display: flex; gap: 8px; align-items: baseline; }
+.chk-i { flex: none; width: 16px; text-align: center; font-weight: 700; }
+.chk-ok .chk-i { color: var(--acc); }
+.chk-no { color: var(--alert); }
+.chk-no .chk-i { color: var(--alert); }
+.chk-chk .chk-i { color: var(--warn); }
+.chk-fin { color: var(--warn); font-weight: 600; }
+.chk-src { margin-top: 10px; font: 400 11.5px/1.45 'IBM Plex Sans', sans-serif; color: var(--label); }
 .vlist { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 5px; }
 .vlist span { font: 500 11px/1.2 'IBM Plex Sans', sans-serif; padding: 4px 8px; border-radius: 3px; background: oklch(0.95 0.025 35); color: oklch(0.44 0.11 32); border: 1px solid oklch(0.87 0.05 35); }
 
@@ -929,7 +938,7 @@ input[type="number"]::-webkit-outer-spin-button, input[type="number"]::-webkit-i
         tx.push(it('EMPOWER‑CSCC‑1 (n = 193): respuestas globales del 47,2 % (17,1 % completas), duración mediana de la respuesta de 41,3 meses y supervivencia libre de progresión mediana de 22,1 meses; 10,4 % de suspensiones por toxicidad.', ['EADO']));
         tx.push(it('Pembrolizumab está aprobado por la FDA (KEYNOTE‑629: respuestas del 34,3 %), pero no por la EMA.', ['EADO'], 'warn'));
         tx.push(it('Segunda línea o contraindicación al anti‑PD‑1: cetuximab, preferentemente combinado con radioterapia, o ensayo clínico. La quimioterapia basada en platino puede considerarse frente a los cuidados de soporte exclusivos.', ['EADO C, 3', 'AIOM condicional a favor']));
-        tx.push(it('En España, cemiplimab está aprobado y financiado desde 2023 para el CEC avanzado no candidato a tratamiento curativo.', [], 'info'));
+        tx.push(it('En España, cemiplimab está autorizado y financiado por el SNS desde 2024 (CIPM, julio de 2024; IPT 59/2021) para el CEC metastásico o localmente avanzado no candidato a cirugía ni radioterapia curativas. Uso hospitalario.', [], 'info'));
         tx.push(it('En EE. UU. están aprobados por la FDA cemiplimab, pembrolizumab y cosibelimab, con respuestas del 40–50 % y hasta un tercio de respuestas completas.', ['NCCN 2026', 'Post‑guía']));
       }
       tx.push(it('Tratamiento sistémico solo (NCCN 1.2027), si la radioterapia o la cirugía curativas no son factibles: preferentes cemiplimab, cosibelimab y pembrolizumab, o ensayo clínico; otra opción, nivolumab. Si no es candidato o progresa con inhibidores de punto de control: carboplatino con paclitaxel (± cetuximab) o inhibidores de EGFR (cetuximab); útiles en determinadas circunstancias capecitabina, cisplatino o cisplatino con 5‑fluorouracilo. Con radioterapia: preferente cisplatino o ensayo; otras, carboplatino, carboplatino con paclitaxel o cetuximab.', ['NCCN 2A']));
@@ -947,7 +956,9 @@ input[type="number"]::-webkit-outer-spin-button, input[type="number"]::-webkit-i
     }
     // Evidencia publicada después de EADO 2023 y AIOM 2024
     if (!advanced && ctx.adjCand) {
-      tx.push(it('Cemiplimab adyuvante tras cirugía y radioterapia postoperatoria en el CEC de alto riesgo de recidiva (C‑POST, n = 415): supervivencia libre de enfermedad a 24 meses del 87,1 % frente al 64,1 % con placebo (HR 0,32; IC 95 % 0,20–0,51), con menos recidivas locorregionales (HR 0,20) y a distancia (HR 0,35). Toxicidad grado ≥ 3: 23,9 % frente a 14,2 %.', ['Post‑guía · C‑POST, NEJM 2025'], 'warn'));
+      tx.push(it('Cemiplimab adyuvante tras cirugía y radioterapia postoperatoria en el CEC de alto riesgo de recidiva (C‑POST, n = 415): supervivencia libre de enfermedad a 24 meses del 87,1 % frente al 64,1 % con placebo (HR 0,32; IC 95 % 0,20–0,51), con menos recidivas locorregionales (HR 0,20) y a distancia (HR 0,35). Toxicidad grado ≥ 3: 23,9 % frente a 14,2 %; reacciones inmunomediadas grado ≥ 3 en el 7,3 %; suspensión por toxicidad en el 9,8 %. Actualización de abril de 2025: HR de SLE 0,35. ESMO 2026 (mediana de 44 meses, sin publicación revisada): supervivencia global HR 0,63 (0,36–1,11), no significativa; el 88 % de los que recayeron con placebo recibió después cemiplimab.', ['Post‑guía · C‑POST, NEJM 2025'], 'warn'));
+      tx.push(it('Situación en España (revisión 25‑11‑2026): IPT‑452 favorable (18‑5‑2026), que lo considera la única opción adyuvante aprobada y preferible a la vigilancia, con valoración individualizada según los criterios de alto riesgo de la ficha técnica. La CIPM propuso no financiarlo (sesión 271, 17‑6‑2026) por impacto presupuestario; no consta la resolución definitiva. Su uso dependería de la comisión de farmacia del centro o la comunidad: confirmar con Farmacia Hospitalaria y BIFIMED.', ['IPT‑452', 'CIPM 2026'], 'warn'));
+      tx.push(it('Limitaciones (IPT‑452): análisis intermedio con SLE inmadura y evaluada sólo por el investigador; supervivencia global no demostrada, por lo que no se sabe si adelantarlo a la adyuvancia mejora la supervivencia frente a reservarlo para la recidiva; riesgo de sobretratamiento (el 60 % con placebo seguía libre de enfermedad a 3 años). Sin datos en inmunodeprimidos. Efecto mayor en el control locorregional (HR ≈ 0,2) que a distancia (≈ 0,35).', ['IPT‑452'], 'info'));
       tx.push(it('Aprobado por la FDA (octubre de 2025) y por la Comisión Europea (noviembre de 2025) para adultos con CEC de alto riesgo de recidiva tras cirugía y radioterapia: 350 mg cada 3 semanas durante 12 semanas y después 700 mg cada 6 semanas (o 350 mg cada 3 semanas), hasta 48 semanas. Comprobar que el paciente cumple los criterios de alto riesgo del ensayo y la financiación local. Las guías EADO 2023 y AIOM 2024 son anteriores y no lo recogen.', ['Post‑guía · EMA 2025'], 'warn'));
       tx.push(it('NCCN 1.2027: tras exéresis con márgenes negativos y radioterapia adyuvante, cemiplimab es de categoría 1 preferente en el CEC con rasgos de riesgo extremadamente alto (los de C‑POST): ganglio con extensión extracapsular y el mayor ≥ 20 mm, ≥ 3 ganglios afectos, metástasis en tránsito, T4 con invasión ósea, invasión perineural clínica o radiológica, o recidivas muy seleccionadas con rasgos concretos. En el resto de la enfermedad regional resecada, la adyuvancia sistémica sólo en ensayo. La supervivencia global de C‑POST aún es inmadura (HR 0,78).' + (ctx.xf.length ? ' En este caso: ' + ctx.xf.join('; ') + '.' : ' En este caso no constan esos rasgos.'), ['NCCN 1', 'Post‑guía'], 'warn'));
       tx.push(it('Pembrolizumab adyuvante tras cirugía y radioterapia (KEYNOTE‑630): ensayo interrumpido por futilidad en 2024; no mejoró significativamente la supervivencia libre de recidiva y la supervivencia global a 24 meses no lo favoreció (87,3 % frente a 90,7 %). No debe usarse en adyuvancia.', ['Post‑guía · KEYNOTE‑630, ASCO 2025'], 'warn'));
@@ -1141,10 +1152,12 @@ input[type="number"]::-webkit-outer-spin-button, input[type="number"]::-webkit-i
 
     // Tratamiento sistémico
     var sy;
-    if (adv) sy = S.ci ? 'Cetuximab (mejor con radioterapia) o ensayo clínico.' : 'Anti‑PD‑1 en primera línea (cemiplimab).';
-    else if (c.adjCand) sy = 'Valorar cemiplimab adyuvante tras cirugía y radioterapia' + (c.xf.length ? ' (rasgos de C‑POST presentes).' : ' (no constan los rasgos de C‑POST).');
+    var cm = vCemi(c);
+    if (adv) sy = S.ci ? 'Cetuximab (mejor con radioterapia) o ensayo clínico.' : 'Anti‑PD‑1 en primera línea (cemiplimab, financiado en el SNS).';
+    else if (c.adjCand) sy = cm.v.c === 'no' ? 'Cemiplimab adyuvante: no cumple los criterios de la ficha técnica (ver checklist).' :
+      'Valorar cemiplimab adyuvante tras cirugía y RT posoperatoria' + (cm.v.c === 'ok' ? ' (cumple criterio de alto riesgo de C‑POST)' : ' (criterios de C‑POST por confirmar)') + '; no financiado en el SNS: consultar Farmacia.';
     else sy = 'No indicado.';
-    rows.push(['Sistémico', sy, adv || (c.adjCand && c.xf.length) ? 'warn' : '']);
+    rows.push(['Sistémico', sy, adv || (c.adjCand && cm.v.c !== 'no') ? 'warn' : '']);
 
     // Inmunodepresión
     if (inm) rows.push(['Inmunodepresión', S.inm === 'tos' ? 'Manejar como alto riesgo. Con el equipo de trasplante: retinoides orales y paso a inhibidores de mTOR.' : 'Manejar como alto riesgo; umbral bajo para biopsiar.', 'warn']);
@@ -1213,9 +1226,76 @@ input[type="number"]::-webkit-outer-spin-button, input[type="number"]::-webkit-i
       if (S.ci) return { v: 'Cetuximab ± RT', d: 'Contraindicación o fracaso del anti‑PD‑1: cetuximab (mejor con RT o quimioterapia) o ensayo clínico.', c: 'maybe' };
       return { v: 'Anti‑PD‑1', d: 'Cemiplimab en primera línea, único aprobado por la EMA en el CEC avanzado no candidato a tratamiento curativo. NCCN 1.2027: preferentes cemiplimab, cosibelimab y pembrolizumab.', c: 'ok' };
     }
-    if (adjCand) { var xf = extremeFeatures(); return { v: 'Valorar cemiplimab adyuvante', d: 'Tras cirugía y RT postoperatoria en alto riesgo de recidiva: C‑POST positivo, aprobado por la EMA en 2025 y categoría 1 preferente en la NCCN 1.2027 si hay rasgos de riesgo extremadamente alto' + (xf.length ? ' (aquí: ' + xf.join('; ') + ')' : ' (no constan en este caso)') + '. Posterior a EADO 2023 y AIOM 2024, que no recomendaban adyuvancia sistémica.', c: xf.length ? 'ok' : 'maybe' }; }
+    if (adjCand) { var xf = extremeFeatures(); return { v: 'Valorar cemiplimab adyuvante', d: 'Tras cirugía y RT postoperatoria en alto riesgo de recidiva: C‑POST positivo, aprobado por la EMA en 2025 y categoría 1 preferente en la NCCN 1.2027 si hay rasgos de riesgo extremadamente alto' + (xf.length ? ' (aquí: ' + xf.join('; ') + ')' : ' (no constan en este caso)') + '. En España: IPT‑452 favorable, pero la CIPM propuso no financiarlo (junio de 2026). Posterior a EADO 2023 y AIOM 2024, que no recomendaban adyuvancia sistémica.', c: xf.length ? 'ok' : 'maybe' }; }
     if (S.nst === 'pos' || S.itm) return { v: 'No estándar', d: 'Sin adyuvancia sistémica establecida tras la resección; neoadyuvancia en investigación.', c: 'no' };
     return { v: 'No indicado', d: 'Manejo local y seguimiento.', c: 'no' };
+  }
+
+  // Criterios de alto riesgo de C‑POST (ficha técnica de Libtayo, sección 5.1): cumplidos y por comprobar
+  function cpostCriteria(c) {
+    var met = [], chk = [], nA = nCat('ajcc'), d = num('diam');
+    if (S.nst === 'pos' && S.ene === 'si') {
+      if (S.nt !== '3') met.push('extensión extracapsular con ganglio ≥ 20 mm');
+      else chk.push('extensión extracapsular: comprobar que algún ganglio mide ≥ 20 mm');
+    }
+    if (S.nst === 'pos' && S.nn === 'm') chk.push('varios ganglios: comprobar que son ≥ 3');
+    if (S.itm) chk.push('metástasis en tránsito: comprobar que están a > 2 cm del primario y sin superar la cuenca regional');
+    if (S.hue === 'ct' || S.hue === 'sb') met.push('T4 con invasión de hueso cortical');
+    if (S.pni === 'cl') met.push('invasión perineural de nervio nominado con afectación clínica o radiológica');
+    if (S.rec) {
+      var adv = [];
+      if (['N2b', 'N2c', 'N3a', 'N3b'].indexOf(nA) >= 0) adv.push('ganglios ≥ N2b');
+      if (['T3', 'T4a', 'T4b'].indexOf(c.tA) >= 0) adv.push('lesión ≥ T3');
+      if (S.gd === 'pobre' && d !== null && d >= 20) adv.push('pobremente diferenciado ≥ 20 mm');
+      if (adv.length) met.push('recidiva local con ' + adv.join(', '));
+      else chk.push('recidiva local: sólo cuenta con ganglios ≥ N2b, lesión ≥ T3 o pobremente diferenciado ≥ 20 mm');
+    }
+    return { met: met, chk: chk };
+  }
+
+  // Checklist de uso de cemiplimab en España (documento C‑POST/IPT‑452/CIPM, revisión 25‑11‑2026)
+  function vCemi(c) {
+    var cat = c.cat.k, adv = cat === 'dist' || cat === 'lac' || (cat === 'reg' && S.cur === 'no');
+    var rows = [], edad = num('edad');
+    function r(s, t) { rows.push([s, t]); }
+    if (adv) {
+      r(S.cur === 'no' || S.m === 'M1' ? 'ok' : 'chk', S.m === 'M1' ? 'CEC metastásico.' : S.cur === 'no' ? 'Localmente avanzado no candidato a cirugía ni RT curativas.' : 'Confirmar que no es candidato a cirugía ni a RT con intención curativa.');
+      r(S.ci ? 'no' : 'ok', S.ci ? 'Consta contraindicación, intolerancia o fracaso de anti‑PD‑1.' : 'Sin contraindicación ni fracaso previo de anti‑PD‑1.');
+      if (S.inm === 'tos') r('chk', 'Trasplantado: riesgo de rechazo del injerto (~40 %); decidir en comité con el equipo de trasplante.');
+      r('chk', 'ECOG y función orgánica: los ECOG ≥ 2 no se incluyeron en los ensayos pivotales.');
+      r('ok', 'Financiado por el SNS desde 2024 (CIPM, julio de 2024; IPT 59/2021). Uso hospitalario.');
+      var no = S.ci;
+      return { mode: 'adv', rows: rows, v: no ? { v: 'No indicado', d: 'Cemiplimab en monoterapia para el CEC metastásico o localmente avanzado no candidato a cirugía ni RT curativas: indicación autorizada y financiada. En este caso consta contraindicación o fracaso del anti‑PD‑1.', c: 'no' } :
+        { v: 'Indicación financiada', d: 'Cemiplimab en monoterapia para el CEC metastásico o localmente avanzado no candidato a cirugía ni RT curativas: autorizado en la UE y financiado por el SNS desde 2024. 350 mg IV cada 3 semanas.', c: 'ok' } };
+    }
+    if (!c.adjCand) return null;
+    var hr = cpostCriteria(c);
+    r('chk', 'Origen cutáneo: excluidos labio bermellón, mucosas, área anogenital y adenopatía con primario desconocido.');
+    r(S.mar === 'r2' ? 'no' : S.mar === 'pend' ? 'chk' : 'ok', S.mar === 'r2' ? 'Residuo macroscópico (R2): no cumple la resección macroscópica completa.' : S.mar === 'pend' ? 'Resección macroscópica completa con intención curativa: pendiente de la exéresis.' : 'Resección macroscópica completa con intención curativa (' + S.mar.toUpperCase() + ').');
+    r('chk', 'RT o quimiorradioterapia posoperatoria completada (BED ≥ 50 Gy en el lecho): obligatoria; sin RT no cumple la indicación.');
+    r('chk', 'Inicio entre 2 y 10 semanas tras terminar la RT.');
+    r(hr.met.length ? 'ok' : hr.chk.length ? 'chk' : 'no', hr.met.length ? 'Criterio de alto riesgo: ' + hr.met.join('; ') + '.' : hr.chk.length ? 'Criterio de alto riesgo por confirmar: ' + hr.chk.join('; ') + '.' : 'Ningún criterio de alto riesgo de C‑POST (ganglio ≥ 20 mm con extensión extracapsular, ≥ 3 ganglios, metástasis en tránsito, T4 óseo, invasión perineural clínica o recidiva con factor adverso).');
+    if (hr.met.length && hr.chk.length) r('chk', 'Además por confirmar: ' + hr.chk.join('; ') + '.');
+    r('chk', 'ECOG 0–1 y función hepática, renal y medular adecuadas.');
+    if (S.inm === 'tos') r('no', 'Trasplante de órgano sólido o de progenitores: excluido en C‑POST (sin datos y con riesgo de rechazo).');
+    else if (S.inm === 'otra') r('chk', 'Excluida la enfermedad autoinmune que requirió inmunosupresores sistémicos en los 5 años previos.');
+    else if (S.inm === 'vih') r('chk', 'VIH: excluido si no está controlado; excluidas también hepatitis B y C.');
+    else if (S.inm === 'hem') r('chk', 'LLC: permitida sólo si no ha requerido tratamiento sistémico en los 6 meses previos.');
+    else r('ok', 'Sin trasplante ni inmunosupresión sistémica.');
+    r(S.ci ? 'no' : 'chk', S.ci ? 'Consta tratamiento previo o contraindicación de anti‑PD‑1.' : 'Sin inmunoterapia previa para el CEC.');
+    r('chk', 'Balance beneficio‑riesgo y preferencias comentados y documentados: el 60 % con placebo seguía libre de enfermedad a 3 años; RA inmunomediadas grado ≥ 3 en el 7 %' + (edad !== null && edad >= 65 ? '; en ≥ 65 años, más EA graves (19,9 % frente a 11,1 %) y más suspensiones.' : '.'));
+    r('fin', 'Financiación: autorizado en la UE (noviembre de 2025) e IPT‑452 favorable (18‑5‑2026), pero la CIPM propuso no financiarlo (17‑6‑2026). Acceso por la comisión de farmacia del centro o la comunidad: confirmar con Farmacia Hospitalaria y BIFIMED.');
+    var fail = rows.some(function (x) { return x[0] === 'no'; });
+    var v = fail ? { v: 'No cumple', d: 'Cemiplimab adyuvante (350 mg cada 3 semanas 12 semanas y después 700 mg cada 6 semanas, máximo 48 semanas): este caso no cumple algún requisito de la ficha técnica o de C‑POST.', c: 'no' } :
+      hr.met.length ? { v: 'Cumple alto riesgo', d: 'Candidato a cemiplimab adyuvante si se confirman los requisitos pendientes. Pauta: 350 mg IV cada 3 semanas durante 12 semanas y después 700 mg cada 6 semanas (o 350 mg cada 3 semanas), máximo 48 semanas; sin reducciones de dosis. No financiado en el SNS.', c: 'ok' } :
+      { v: 'Comprobar criterios', d: 'Sólo hay criterios de alto riesgo por confirmar. La ficha técnica limita la adyuvancia a los criterios de C‑POST; no basta con los factores de riesgo BWH o AJCC. No financiado en el SNS.', c: 'maybe' };
+    return { mode: 'adj', rows: rows, v: v };
+  }
+
+  function cemiHTML(cm) {
+    var ic = { ok: '✓', no: '✗', chk: '?', fin: '€' };
+    return '<ul class="chk">' + cm.rows.map(function (x) { return '<li class="chk-' + x[0] + '"><span class="chk-i">' + ic[x[0]] + '</span><span>' + esc(x[1]) + '</span></li>'; }).join('') + '</ul>' +
+      '<div class="chk-src">✓ cumple · ✗ no cumple · ? comprobar. Fuente: Rischin D, et al. NEJM 2025 (C‑POST); AEMPS IPT‑452 (2026) e IPT 59/2021; CIPM, sesión 271 (17‑6‑2026). Situación revisada a 25‑11‑2026: confirmar la vigente.</div>';
   }
 
   // ---------------------------------------------------------------
@@ -1334,6 +1414,8 @@ input[type="number"]::-webkit-outer-spin-button, input[type="number"]::-webkit-i
     html += verdictHTML('Ganglio centinela', vSLNB(c));
     html += verdictHTML('Radioterapia postoperatoria', vRT(c.cat.k, c));
     html += verdictHTML('Tratamiento sistémico', vSys(c.cat.k, c.adjCand));
+    var cm = c.cat.pending ? null : vCemi(c);
+    if (cm) html += verdictHTML(cm.mode === 'adj' ? 'Cemiplimab adyuvante · criterios en España' : 'Cemiplimab · criterios en España', cm.v, cemiHTML(cm));
 
     var secs = build(c);
     if (!secs.length) html += '<div class="card"><div class="vdet">Esta guía o clasificación no tiene recomendaciones aplicables a los datos introducidos. Pulse «Todas» para verlas todas.</div></div>';
@@ -1353,7 +1435,7 @@ input[type="number"]::-webkit-outer-spin-button, input[type="number"]::-webkit-i
       '<p>Fuentes: Stratigos AJ, et al. European consensus-based interdisciplinary guideline for invasive cutaneous squamous cell carcinoma. Part 1: Diagnostics and prevention, y Part 2: Treatment — Update 2023 (EADO/EDF/ESTRO/UEMS/EADV/EORTC). Eur J Cancer 2023;193:113251 y 113252. Queirolo P, et al. Guidelines for the diagnosis and treatment of cutaneous squamous cell carcinoma: a GRADE approach (AIOM). ESMO Open 2024;9(5):103005. AJCC Cancer Staging Manual, 8.ª ed.; UICC TNM, 8.ª ed.</p>' +
       '<p>Otras guías: Keohane SG, et al. British Association of Dermatologists (BAD) guidelines for cutaneous squamous cell carcinoma 2020. Br J Dermatol 2021;184:401–414. Kim JYS, et al. American Academy of Dermatology (AAD) guidelines of care for cutaneous squamous cell carcinoma. J Am Acad Dermatol 2018;78:560–578. Leiter U, et al. German S3 guideline actinic keratosis and cutaneous squamous cell carcinoma, update 2023. EJC Skin Cancer 2023;1:100004. Peris K, et al. Cutaneous squamous cell carcinoma: Italian guidelines by SIDeMaST (Società Italiana di Dermatologia). Las recomendaciones de estas guías se han recogido de la revisión comparativa de Paradela de la Morena S, et al. Actas Dermosifiliogr 2026;117:104611 y 104612.</p>' +
       '<p>NCCN Clinical Practice Guidelines in Oncology: Squamous Cell Skin Cancer, versión 1.2027 (8 de octubre de 2026). Se recogen sus recomendaciones de práctica clínica, redactadas de nuevo y sin reproducir sus algoritmos ni figuras; categoría 2A salvo que se indique otra (1: evidencia de alto nivel con consenso uniforme; 2B: consenso). Consulte el documento original en nccn.org.</p>' +
-      '<p>Evidencia posterior a las guías (etiqueta «Post‑guía»): Ma VT. Therapeutic strategies for nonmelanoma skin cancers (NCCN 2026 Annual Conference). J Natl Compr Canc Netw 2026;24(Suppl):24–26. Rischin D, et al. Adjuvant cemiplimab or placebo in high-risk cutaneous squamous-cell carcinoma (C‑POST). N Engl J Med 2025. Aprobación de la EMA para la adyuvancia, noviembre de 2025. KEYNOTE‑630, adyuvancia con pembrolizumab: J Clin Oncol 2025;43(16 suppl):6000.</p>' +
+      '<p>Evidencia posterior a las guías (etiqueta «Post‑guía»): Ma VT. Therapeutic strategies for nonmelanoma skin cancers (NCCN 2026 Annual Conference). J Natl Compr Canc Netw 2026;24(Suppl):24–26. Rischin D, et al. Adjuvant cemiplimab or placebo in high-risk cutaneous squamous-cell carcinoma (C‑POST). N Engl J Med 2025. Aprobación de la EMA para la adyuvancia, noviembre de 2025. AEMPS: IPT‑452/V1/18052026 (cemiplimab adyuvante) e IPT 59/2021 (CEC avanzado); Ministerio de Sanidad, acuerdos de la CIPM, sesión 271 (17‑6‑2026); datos de C‑POST en ESMO 2026 (comunicado del promotor). KEYNOTE‑630, adyuvancia con pembrolizumab: J Clin Oncol 2025;43(16 suppl):6000.</p>' +
       '</div>';
 
     document.getElementById('results').innerHTML = html;
